@@ -24,6 +24,7 @@ save while recording every frame, detection, decision, and action.
 - [x] Dry-run execution by default
 - [x] Foreground-window guard before live mouse or keyboard input
 - [x] Exact-window foreground guard before desktop pixel capture
+- [x] Explicit in-game F8 handoff before observation or input
 - [x] Screenshot and JSONL trace artifacts
 - [x] Conservative next-turn baseline planner
 - [ ] Civilization VII dataset and trained weights
@@ -70,11 +71,30 @@ Run live capture in dry-run mode with a trained model:
 uv run airi-civ7 run --model models\yolo26n-civilization-vii.pt --steps 10
 ```
 
+To configure or load the match yourself and activate the agent only after reaching the first turn,
+add `--wait-for-gameplay`. The runner stays in `PREPARING`, becomes `ARMED` when the exact game
+window owns foreground focus, and enters `ACTIVE` only after you press F8:
+
+```powershell
+uv run airi-civ7 run `
+  --model models\yolo26n-civilization-vii.pt `
+  --wait-for-gameplay `
+  --steps 10
+```
+
+No game pixels are captured and no input is injected before that handoff. The default timeout is
+15 minutes and can be changed with `--handoff-timeout`. Every accepted handoff is written to
+`handoff.json` in the run directory.
+
 Only add `--execute` after reviewing dry-run traces. Live execution refuses input whenever the
 configured game title is not the foreground window:
 
 ```powershell
-uv run airi-civ7 run --model models\yolo26n-civilization-vii.pt --steps 10 --execute
+uv run airi-civ7 run `
+  --model models\yolo26n-civilization-vii.pt `
+  --wait-for-gameplay `
+  --steps 10 `
+  --execute
 ```
 
 Artifacts are stored under `runs/<UTC timestamp>/` with captured frames and `trace.jsonl`.

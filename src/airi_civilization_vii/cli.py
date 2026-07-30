@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .capture import CaptureSource, DxcamCapture, ImageCapture, WindowTarget, find_window
 from .execution import DryRunExecutor, Executor, WindowsInputExecutor
+from .handoff import HandoffState, wait_for_handoff
 from .installation import (
     GameExecutable,
     discover_installation,
@@ -48,6 +49,17 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--steps", type=int, default=10)
     run_parser.add_argument("--step-delay", type=float, default=1.0)
     run_parser.add_argument("--runs-root", type=Path, default=Path("runs"))
+    run_parser.add_argument(
+        "--wait-for-gameplay",
+        action="store_true",
+        help="wait for an F8 handoff from the foreground game before observing",
+    )
+    run_parser.add_argument(
+        "--handoff-timeout",
+        type=float,
+        default=900,
+        help="seconds to wait for the in-game F8 handoff (default: 900)",
+    )
     run_parser.add_argument(
         "--execute",
         action="store_true",
@@ -152,9 +164,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     capture: CaptureSource
     window_target: WindowTarget | None = None
+    run_directory = timestamped_run_directory(arguments.runs_root)
     if arguments.image is not None:
         if arguments.execute:
             raise ValueError("--execute cannot be combined with a repeated fixture image")
+        if arguments.wait_for_gameplay:
+            raise ValueError("--wait-for-gameplay requires live game capture")
         capture = ImageCapture(arguments.image)
     else:
         window_target = find_window(arguments.window_title)
@@ -172,7 +187,36 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     else:
         executor = DryRunExecutor()
-    run_directory = timestamped_run_directory(arguments.runs_root)
+
+    if arguments.wait_for_gameplay:
+        if window_target is None:
+            raise ValueError("Gameplay handoff requires a discovered game window")
+        print(
+            "Configure or load the match, leave Civilization VII in the foreground, then press F8."
+        )
+
+        def report_handoff_state(state: HandoffState) -> None:
+            if state is HandoffState.PREPARING:
+                print("PREPARING: waiting for Civilization VII to own foreground focus.")
+            elif state is HandoffState.ARMED:
+                print("ARMED: Civilization VII is ready; press F8 to give the agent control.")
+
+        try:
+            handoff = wait_for_handoff(
+                window_target,
+                timeout_seconds=arguments.handoff_timeout,
+                on_state_change=report_handoff_state,
+            )
+        except TimeoutError as error:
+            print(f"TIMED OUT: {error}")
+            return 2
+        run_directory.mkdir(parents=True, exist_ok=True)
+        (run_directory / "handoff.json").write_text(
+            json.dumps(handoff.to_json(), indent=2) + "\n",
+            encoding="utf-8",
+        )
+        print(f"ACTIVE: F8 accepted for {window_target.title!r}; observation is starting.")
+
     observed_steps = GameRun(
         capture=capture,
         detector=detector,
