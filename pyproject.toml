@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "airi-game-civilization-vii"
+version = "0.1.0"
+description = "A safe, observable Civilization VII game-playing agent for Project AIRI"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [
+  { name = "Project AIRI contributors" },
+]
+dependencies = [
+  "pillow>=11.3,<13",
+]
+
+[project.optional-dependencies]
+vision = [
+  "ultralytics>=8.4.0,<9",
+]
+windows = [
+  "dxcam>=0.0.5,<1; sys_platform == 'win32'",
+  "pydirectinput>=1.0.4,<2; sys_platform == 'win32'",
+]
+
+[project.scripts]
+airi-civ7 = "airi_civilization_vii.cli:main"
+
+[dependency-groups]
+dev = [
+  "mypy>=1.17,<2",
+  "pytest>=8.4,<10",
+  "ruff>=0.12,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/airi_civilization_vii"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["airi_civilization_vii"]
+
+[[tool.mypy.overrides]]
+module = ["dxcam", "pydirectinput", "ultralytics", "ultralytics.*"]
+follow_imports = "skip"
+ignore_missing_imports = true

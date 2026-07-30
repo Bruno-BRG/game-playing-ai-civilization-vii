@@ -1,0 +1,19 @@
+path: .
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: button.next_turn
+  1: button.choose_research
+  2: button.choose_civic
+  3: button.choose_production
+  4: button.continue
+  5: button.close
+  6: panel.notification
+  7: dialog.event
+  8: unit.selected
+  9: unit.settler
+  10: unit.scout
+  11: city.own
+  12: tile.valid_move
