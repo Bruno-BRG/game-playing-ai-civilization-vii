@@ -14,5 +14,6 @@ smoke-runs/
 live-runs/
 models/*.pt
 models/*.onnx
+models/*.ts
 datasets/civilization-vii/images/
 datasets/civilization-vii/labels/

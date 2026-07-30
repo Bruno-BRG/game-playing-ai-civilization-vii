@@ -1,7 +1,11 @@
 from pathlib import Path
 
 from airi_civilization_vii.domain import ActionKind, BoundingBox, Detection, Observation
-from airi_civilization_vii.planning import NextTurnBaselinePlanner
+from airi_civilization_vii.planning import (
+    NextActionKeyboardPlanner,
+    NextTurnBaselinePlanner,
+    ObservePlanner,
+)
 
 
 def observation_with(*detections: Detection) -> Observation:
@@ -43,3 +47,17 @@ def test_baseline_stops_when_next_turn_is_ambiguous() -> None:
     )
 
     assert action.kind is ActionKind.STOP
+
+
+def test_observe_planner_keeps_the_bounded_run_alive_without_input() -> None:
+    action = ObservePlanner().plan(observation_with())
+
+    assert action.kind is ActionKind.WAIT
+    assert action.duration_seconds == 0
+
+
+def test_next_action_keyboard_planner_uses_official_enter_binding() -> None:
+    action = NextActionKeyboardPlanner().plan(observation_with())
+
+    assert action.kind is ActionKind.PRESS_KEYS
+    assert action.keys == ("enter",)

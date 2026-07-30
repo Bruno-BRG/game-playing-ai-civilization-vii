@@ -86,6 +86,32 @@ No game pixels are captured and no input is injected before that handoff. The de
 15 minutes and can be changed with `--handoff-timeout`. Every accepted handoff is written to
 `handoff.json` in the run directory.
 
+The generic COCO weights do not recognize Civilization VII controls. Use the observation policy to
+collect all configured frames without input while building the game-specific dataset:
+
+```powershell
+uv run airi-civ7 run `
+  --model models\yolo26n.pt `
+  --planner observe `
+  --wait-for-gameplay `
+  --steps 10 `
+  --runs-root live-runs
+```
+
+For a supervised input-path check, the `next-action` baseline uses Civilization VII's official
+Enter binding. Enter advances to the next required action and may end the turn when no actions
+remain, so begin with exactly one step:
+
+```powershell
+uv run airi-civ7 run `
+  --model models\yolo26n.pt `
+  --planner next-action `
+  --wait-for-gameplay `
+  --steps 1 `
+  --execute `
+  --runs-root live-runs
+```
+
 Only add `--execute` after reviewing dry-run traces. Live execution refuses input whenever the
 configured game title is not the foreground window:
 

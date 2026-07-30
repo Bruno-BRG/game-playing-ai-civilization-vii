@@ -29,3 +29,25 @@ class NextTurnBaselinePlanner:
         if len(candidates) != 1:
             return Action(kind=ActionKind.STOP)
         return Action(kind=ActionKind.CLICK_DETECTION, target_id=candidates[0].id)
+
+
+class ObservePlanner:
+    """Keep collecting bounded observations without requesting game input."""
+
+    def plan(self, observation: Observation) -> Action:
+        del observation
+        return Action(kind=ActionKind.WAIT)
+
+
+class NextActionKeyboardPlanner:
+    """Request Civilization VII's official keyboard ``Next Action`` command.
+
+    The installed game binds Enter to advancing to the next required action, or ending
+    the turn when none remain. This deliberately simple policy is intended for one-step
+    supervised runs while the Civilization-specific detector and strategic planner are
+    being trained.
+    """
+
+    def plan(self, observation: Observation) -> Action:
+        del observation
+        return Action(kind=ActionKind.PRESS_KEYS, keys=("enter",))

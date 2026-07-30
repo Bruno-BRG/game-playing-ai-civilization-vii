@@ -17,7 +17,7 @@ from .installation import (
     launch_game,
 )
 from .perception import NullDetector, YoloDetector
-from .planning import NextTurnBaselinePlanner
+from .planning import NextActionKeyboardPlanner, NextTurnBaselinePlanner, ObservePlanner, Planner
 from .run import GameRun, timestamped_run_directory
 from .training import export_onnx, train_yolo26
 
@@ -49,6 +49,12 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--steps", type=int, default=10)
     run_parser.add_argument("--step-delay", type=float, default=1.0)
     run_parser.add_argument("--runs-root", type=Path, default=Path("runs"))
+    run_parser.add_argument(
+        "--planner",
+        choices=["detect-next-turn", "observe", "next-action"],
+        default="detect-next-turn",
+        help="action policy (default: detect-next-turn)",
+    )
     run_parser.add_argument(
         "--wait-for-gameplay",
         action="store_true",
@@ -165,6 +171,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     capture: CaptureSource
     window_target: WindowTarget | None = None
     run_directory = timestamped_run_directory(arguments.runs_root)
+    if arguments.planner == "next-action" and arguments.execute and not arguments.wait_for_gameplay:
+        raise ValueError("Live next-action execution requires --wait-for-gameplay")
+    if arguments.planner == "next-action" and arguments.execute and arguments.steps != 1:
+        raise ValueError("Live next-action execution requires --steps 1")
     if arguments.image is not None:
         if arguments.execute:
             raise ValueError("--execute cannot be combined with a repeated fixture image")
@@ -217,10 +227,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         print(f"ACTIVE: F8 accepted for {window_target.title!r}; observation is starting.")
 
+    planner: Planner
+    if arguments.planner == "observe":
+        planner = ObservePlanner()
+    elif arguments.planner == "next-action":
+        planner = NextActionKeyboardPlanner()
+    else:
+        planner = NextTurnBaselinePlanner()
+
     observed_steps = GameRun(
         capture=capture,
         detector=detector,
-        planner=NextTurnBaselinePlanner(),
+        planner=planner,
         executor=executor,
         run_directory=run_directory,
         step_delay_seconds=arguments.step_delay,
