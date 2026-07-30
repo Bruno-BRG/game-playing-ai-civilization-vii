@@ -17,11 +17,13 @@ save while recording every frame, detection, decision, and action.
 ## Current status
 
 - [x] Windows window discovery and DXcam capture boundary
+- [x] Epic manifest, renderer, redirected saves, and runtime doctor
 - [x] YOLO26 inference adapter
 - [x] NMS-free YOLO26 ONNX export command
 - [x] Stable observation and action contracts
 - [x] Dry-run execution by default
 - [x] Foreground-window guard before live mouse or keyboard input
+- [x] Exact-window foreground guard before desktop pixel capture
 - [x] Screenshot and JSONL trace artifacts
 - [x] Conservative next-turn baseline planner
 - [ ] Civilization VII dataset and trained weights
@@ -39,6 +41,20 @@ uv sync --extra vision --extra windows
 
 Use Civilization VII in borderless-windowed mode. The default window-title fragment is
 `Civilization VII`.
+
+Verify an Epic or custom installation, redirected save folder, and running window:
+
+```powershell
+uv run airi-civ7 doctor
+```
+
+The doctor checks `--game-root`, `CIV7_GAME_ROOT`, Epic manifests, and finally the conventional
+Epic installation path. It detects OneDrive Documents redirection through the Windows known-folder
+API. Launch through the entitlement-aware game launcher with:
+
+```powershell
+uv run airi-civ7 launch
+```
 
 ## Safe smoke test
 

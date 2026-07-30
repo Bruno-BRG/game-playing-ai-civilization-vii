@@ -27,6 +27,11 @@ One action per observation prevents a long plan from continuing after the screen
 Input is disabled by default. When explicitly enabled, the executor checks that the configured
 Civilization VII window is foreground immediately before every side effect.
 
+DXcam captures desktop pixels rather than an occluded window surface. The capture backend therefore
+correlates the exact Windows `HWND` discovered at run start and refuses each frame unless that same
+window is foreground. This prevents another application covering the game from entering a dataset or
+driving a false action.
+
 ## Planned telemetry mod
 
 The official Modding SDK can eventually expose single-player state that is hard to infer from

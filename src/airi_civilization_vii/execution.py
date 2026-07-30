@@ -8,6 +8,7 @@ import time
 from dataclasses import dataclass
 from typing import Protocol
 
+from .capture import require_window_foreground
 from .domain import Action, ActionKind, Observation
 
 
@@ -85,7 +86,13 @@ class WindowsInputExecutor:
         }
     )
 
-    def __init__(self, *, window_title: str, capture_origin: tuple[int, int]) -> None:
+    def __init__(
+        self,
+        *,
+        window_handle: int,
+        window_title: str,
+        capture_origin: tuple[int, int],
+    ) -> None:
         if sys.platform != "win32":
             raise RuntimeError("Windows input execution is only available on Windows")
         try:
@@ -94,7 +101,8 @@ class WindowsInputExecutor:
             raise RuntimeError("Install Windows support with: uv sync --extra windows") from error
 
         self._input = pydirectinput
-        self._window_title = window_title.casefold()
+        self._window_handle = window_handle
+        self._window_title = window_title
         self._capture_origin = capture_origin
         self._input.PAUSE = 0.05
         self._input.FAILSAFE = True
@@ -126,12 +134,12 @@ class WindowsInputExecutor:
 
     def _require_game_foreground(self) -> None:
         user32 = ctypes.windll.user32
-        handle = user32.GetForegroundWindow()
+        handle = int(user32.GetForegroundWindow())
         title_length = user32.GetWindowTextLengthW(handle)
         buffer = ctypes.create_unicode_buffer(title_length + 1)
         user32.GetWindowTextW(handle, buffer, title_length + 1)
-        if self._window_title not in buffer.value.casefold():
-            raise RuntimeError(
-                f"Refusing input because the foreground window is {buffer.value!r}, "
-                f"not {self._window_title!r}"
-            )
+        require_window_foreground(
+            target_handle=self._window_handle,
+            foreground_handle=handle,
+            title=self._window_title,
+        )

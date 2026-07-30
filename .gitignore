@@ -10,6 +10,7 @@ dist/
 build/
 *.egg-info/
 runs/
+smoke-runs/
 models/*.pt
 models/*.onnx
 datasets/civilization-vii/images/

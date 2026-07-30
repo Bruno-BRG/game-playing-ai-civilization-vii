@@ -31,6 +31,15 @@ class CaptureRegion:
         return (self.left, self.top, self.right, self.bottom)
 
 
+@dataclass(frozen=True, slots=True)
+class WindowTarget:
+    """The exact top-level window whose pixels and input belong to one game run."""
+
+    handle: int
+    title: str
+    region: CaptureRegion
+
+
 class CaptureSource(Protocol):
     """Produces one RGB image without deciding where it will be persisted."""
 
@@ -55,8 +64,17 @@ class ImageCapture:
             return image.convert("RGB")
 
 
-def find_window_region(title_fragment: str) -> CaptureRegion:
-    """Find a visible top-level Windows window using a case-insensitive title fragment.
+def require_window_foreground(*, target_handle: int, foreground_handle: int, title: str) -> None:
+    """Fail closed when desktop pixels no longer represent the target game window."""
+
+    if foreground_handle != target_handle:
+        raise RuntimeError(
+            f"Refusing capture or input because {title!r} is not the foreground window"
+        )
+
+
+def find_window(title_fragment: str) -> WindowTarget:
+    """Find one visible top-level Windows window using a title fragment.
 
     The returned coordinates include the window chrome. Running Civilization VII in
     borderless-windowed mode keeps the capture stable and avoids exclusive-fullscreen
@@ -67,7 +85,7 @@ def find_window_region(title_fragment: str) -> CaptureRegion:
         raise RuntimeError("Window discovery is only available on Windows")
 
     user32 = ctypes.windll.user32
-    matches: list[CaptureRegion] = []
+    matches: list[WindowTarget] = []
     fragment = title_fragment.casefold()
     enum_callback_type = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
 
@@ -95,7 +113,13 @@ def find_window_region(title_fragment: str) -> CaptureRegion:
 
         rect = Rect()
         if user32.GetWindowRect(handle, ctypes.byref(rect)):
-            matches.append(CaptureRegion(rect.left, rect.top, rect.right, rect.bottom))
+            matches.append(
+                WindowTarget(
+                    handle=int(handle),
+                    title=buffer.value,
+                    region=CaptureRegion(rect.left, rect.top, rect.right, rect.bottom),
+                )
+            )
         return True
 
     user32.EnumWindows(inspect_window, 0)
@@ -109,7 +133,7 @@ def find_window_region(title_fragment: str) -> CaptureRegion:
 class DxcamCapture:
     """Capture the Civilization VII window through the Desktop Duplication API."""
 
-    def __init__(self, region: CaptureRegion) -> None:
+    def __init__(self, target: WindowTarget) -> None:
         if sys.platform != "win32":
             raise RuntimeError("DXcam capture is only available on Windows")
 
@@ -120,15 +144,21 @@ class DxcamCapture:
                 "Install the Windows dependencies with: uv sync --extra windows"
             ) from error
 
-        self._region = region
+        self._target = target
         self._camera = dxcam.create(output_color="RGB")
 
     @property
     def origin(self) -> tuple[int, int]:
-        return (self._region.left, self._region.top)
+        return (self._target.region.left, self._target.region.top)
 
     def capture(self) -> Image.Image:
-        frame = self._camera.grab(region=self._region.dxcam_region)
+        foreground_handle = int(ctypes.windll.user32.GetForegroundWindow())
+        require_window_foreground(
+            target_handle=self._target.handle,
+            foreground_handle=foreground_handle,
+            title=self._target.title,
+        )
+        frame = self._camera.grab(region=self._target.region.dxcam_region)
         if frame is None:
             raise RuntimeError("DXcam did not return a frame; keep the game visible and try again")
         return Image.fromarray(frame)
