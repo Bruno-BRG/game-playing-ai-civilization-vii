@@ -34,3 +34,16 @@ def test_installer_uses_epic_user_data_root_when_game_created_it(tmp_path: Path)
     installation = install_addon(local_app_data=tmp_path)
 
     assert installation.mod_root == epic_root / "Mods" / "civ7-ai-bridge"
+
+
+def test_addon_uses_civ_runtime_xml_http_request() -> None:
+    addon_script = (
+        Path(__file__).parents[1] / "src" / "civ7_ai" / "addon" / "ui" / "civ7-ai-bridge.js"
+    ).read_text(encoding="utf-8")
+
+    # ROOT CAUSE:
+    #
+    # Civilization VII's Cohtml runtime exposes XMLHttpRequest but not the browser Fetch API.
+    # Calling fetch made every poll fail before an observation reached the companion.
+    assert "new XMLHttpRequest()" in addon_script
+    assert "fetch(config.endpoint" not in addon_script

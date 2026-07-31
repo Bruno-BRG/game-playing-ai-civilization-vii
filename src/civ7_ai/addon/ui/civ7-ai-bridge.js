@@ -246,6 +246,31 @@
     }
   }
 
+  function postObservation(observation) {
+    return new Promise((resolve, reject) => {
+      const request = new XMLHttpRequest();
+      request.open("POST", config.endpoint);
+      request.timeout = 30_000;
+      request.setRequestHeader("Content-Type", "application/json");
+      request.setRequestHeader("X-Civ7-AI-Bridge-Token", config.token);
+      request.onload = () => {
+        if (request.status < 200 || request.status >= 300) {
+          reject(new Error(`Companion returned HTTP ${request.status}`));
+          return;
+        }
+        try {
+          resolve(JSON.parse(request.responseText));
+        } catch {
+          reject(new Error("Companion returned invalid JSON"));
+        }
+      };
+      request.onerror = () => reject(new Error("Companion request failed"));
+      request.onabort = () => reject(new Error("Companion request was aborted"));
+      request.ontimeout = () => reject(new Error("Companion request timed out"));
+      request.send(JSON.stringify(observation));
+    });
+  }
+
   async function poll() {
     if (requestInFlight) return;
     let observation;
@@ -259,19 +284,7 @@
 
     requestInFlight = true;
     try {
-      const response = await fetch(config.endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Civ7-AI-Bridge-Token": config.token,
-        },
-        body: JSON.stringify(observation),
-      });
-      if (!response.ok) {
-        console.warn(`[Civ VII AI] Companion returned HTTP ${response.status}`);
-        return;
-      }
-      const decision = await response.json();
+      const decision = await postObservation(observation);
       console.info(`[Civ VII AI] ${decision.action_id}: ${decision.reason}`);
       executeDecision(decision);
     } catch (error) {
