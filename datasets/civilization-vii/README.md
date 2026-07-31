@@ -3,7 +3,7 @@
 This directory defines the first YOLO26 object-detection taxonomy. Images and labels are
 intentionally ignored by Git because game screenshots may contain copyrighted assets and
 the dataset can become large. Publish an approved dataset separately, for example through
-the Project AIRI Hugging Face organization, and record its exact revision here.
+the project's chosen external dataset host, and record its exact revision here.
 
 Expected layout:
 

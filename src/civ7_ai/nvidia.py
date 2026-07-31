@@ -20,12 +20,16 @@ class NvidiaPlannerError(RuntimeError):
 
 @dataclass(frozen=True, slots=True)
 class NvidiaConfig:
-    """Connection settings for an NVIDIA Build OpenAI-compatible model."""
+    """Connection and reasoning settings for the NVIDIA Build Nemotron model."""
 
     api_key: str
-    model: str = "meta/llama-3.3-70b-instruct"
+    model: str = "nvidia/nemotron-3-ultra-550b-a55b"
     base_url: str = "https://integrate.api.nvidia.com/v1"
     timeout_seconds: float = 60
+    temperature: float = 1
+    top_p: float = 0.95
+    max_tokens: int = 16_384
+    reasoning_budget: int = 16_384
 
     def __post_init__(self) -> None:
         if not self.api_key.strip():
@@ -36,6 +40,14 @@ class NvidiaConfig:
             raise ValueError("NVIDIA base URL must use HTTPS")
         if self.timeout_seconds <= 0:
             raise ValueError("NVIDIA request timeout must be positive")
+        if not 0 <= self.temperature <= 1:
+            raise ValueError("NVIDIA temperature must be between 0 and 1")
+        if not 0 < self.top_p <= 1:
+            raise ValueError("NVIDIA top_p must be greater than 0 and at most 1")
+        if self.max_tokens <= 0:
+            raise ValueError("NVIDIA max_tokens must be positive")
+        if not 0 <= self.reasoning_budget <= self.max_tokens:
+            raise ValueError("NVIDIA reasoning_budget must be between 0 and max_tokens")
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,7 +116,14 @@ class NvidiaPlanner:
 
         request_body: JsonObject = {
             "model": self._config.model,
-            "temperature": 0.2,
+            "temperature": self._config.temperature,
+            "top_p": self._config.top_p,
+            "max_tokens": self._config.max_tokens,
+            "chat_template_kwargs": {
+                "enable_thinking": True,
+                "force_nonempty_content": True,
+            },
+            "reasoning_budget": self._config.reasoning_budget,
             "messages": [
                 {
                     "role": "system",
@@ -137,7 +156,7 @@ class NvidiaPlanner:
                     },
                 }
             ],
-            "tool_choice": {"type": "function", "function": {"name": "choose_action"}},
+            "tool_choice": "required",
         }
         response = self._transport(
             f"{self._config.base_url.rstrip('/')}/chat/completions",

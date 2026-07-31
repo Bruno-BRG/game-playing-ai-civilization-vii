@@ -4,11 +4,11 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from airi_civilization_vii.capture import ImageCapture
-from airi_civilization_vii.domain import Action, BoundingBox, Detection, Observation
-from airi_civilization_vii.execution import DryRunExecutor, ExecutionResult
-from airi_civilization_vii.planning import NextTurnBaselinePlanner
-from airi_civilization_vii.run import GameRun
+from civ7_ai.capture import ImageCapture
+from civ7_ai.domain import Action, BoundingBox, Detection, Observation
+from civ7_ai.execution import DryRunExecutor, ExecutionResult
+from civ7_ai.planning import NextTurnBaselinePlanner
+from civ7_ai.run import GameRun
 
 
 class FixedDetector:

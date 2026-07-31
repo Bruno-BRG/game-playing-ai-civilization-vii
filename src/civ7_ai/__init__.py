@@ -1,4 +1,4 @@
-"""Civilization VII observation, planning, and action primitives for Project AIRI."""
+"""Civilization VII observation, planning, and action primitives."""
 
 from .domain import Action, ActionKind, BoundingBox, Detection, Observation
 

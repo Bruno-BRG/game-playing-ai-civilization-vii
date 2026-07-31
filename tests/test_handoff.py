@@ -2,8 +2,8 @@ from collections.abc import Callable
 
 import pytest
 
-from airi_civilization_vii.capture import CaptureRegion, WindowTarget
-from airi_civilization_vii.handoff import F8_VIRTUAL_KEY, HandoffState, wait_for_handoff
+from civ7_ai.capture import CaptureRegion, WindowTarget
+from civ7_ai.handoff import F8_VIRTUAL_KEY, HandoffState, wait_for_handoff
 
 
 class FakeClock:

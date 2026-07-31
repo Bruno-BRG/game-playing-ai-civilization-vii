@@ -3,14 +3,14 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "airi-game-civilization-vii"
+name = "civilization-vii-ai"
 version = "0.1.0"
-description = "A safe, observable Civilization VII game-playing agent for Project AIRI"
+description = "A structured, observable Civilization VII AI companion"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 authors = [
-  { name = "Project AIRI contributors" },
+  { name = "Bruno-BRG" },
 ]
 dependencies = [
   "pillow>=11.3,<13",
@@ -26,7 +26,7 @@ windows = [
 ]
 
 [project.scripts]
-airi-civ7 = "airi_civilization_vii.cli:main"
+civ7-ai = "civ7_ai.cli:main"
 
 [dependency-groups]
 dev = [
@@ -36,7 +36,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/airi_civilization_vii"]
+packages = ["src/civ7_ai"]
 
 [tool.pytest.ini_options]
 addopts = "-ra"
@@ -52,7 +52,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-packages = ["airi_civilization_vii"]
+packages = ["civ7_ai"]
 
 [[tool.mypy.overrides]]
 module = ["dxcam", "pydirectinput", "ultralytics", "ultralytics.*"]

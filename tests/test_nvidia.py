@@ -2,8 +2,8 @@ from collections.abc import Mapping
 
 import pytest
 
-from airi_civilization_vii.domain import JsonValue
-from airi_civilization_vii.nvidia import NvidiaConfig, NvidiaPlanner, NvidiaPlannerError
+from civ7_ai.domain import JsonValue
+from civ7_ai.nvidia import NvidiaConfig, NvidiaPlanner, NvidiaPlannerError
 
 
 def observation() -> dict[str, JsonValue]:
@@ -56,6 +56,16 @@ def test_planner_forces_a_schema_constrained_tool_call() -> None:
 
     assert decision.action_id == "next_action"
     assert decision.reason == "Turn is ready."
+    assert captured_body["model"] == "nvidia/nemotron-3-ultra-550b-a55b"
+    assert captured_body["temperature"] == 1
+    assert captured_body["top_p"] == 0.95
+    assert captured_body["max_tokens"] == 16_384
+    assert captured_body["reasoning_budget"] == 16_384
+    assert captured_body["tool_choice"] == "required"
+    chat_template_kwargs = captured_body["chat_template_kwargs"]
+    assert isinstance(chat_template_kwargs, dict)
+    assert chat_template_kwargs["enable_thinking"] is True
+    assert chat_template_kwargs["force_nonempty_content"] is True
     tools = captured_body["tools"]
     assert isinstance(tools, list)
     tool = tools[0]
@@ -99,3 +109,8 @@ def test_planner_rejects_an_invented_action() -> None:
         NvidiaPlanner(NvidiaConfig(api_key="secret"), transport=transport).choose_action(
             observation()
         )
+
+
+def test_reasoning_budget_cannot_exceed_generation_budget() -> None:
+    with pytest.raises(ValueError, match="reasoning_budget"):
+        NvidiaConfig(api_key="secret", max_tokens=100, reasoning_budget=101)

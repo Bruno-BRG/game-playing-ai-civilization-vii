@@ -37,8 +37,8 @@
 - Correlate stable game identifiers with visual UI targets
 - [x] Version and validate the telemetry envelope
 
-## M5 — Project AIRI integration
+## M5 — Campaign intelligence
 
-- Expose the runner through an authenticated local service or MCP boundary
-- Stream action traces and screenshots into AIRI
-- Require explicit user approval before switching from dry-run to live input
+- Maintain campaign goals, summaries, and strategic memory across sessions
+- Build a local dashboard for action traces and visible game state
+- Compare decisions against deterministic prepared saves

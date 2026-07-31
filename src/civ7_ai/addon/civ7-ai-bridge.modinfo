@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Mod id="airi-civ7-bridge" version="1" xmlns="ModInfo">
+<Mod id="civ7-ai-bridge" version="1" xmlns="ModInfo">
     <Properties>
-        <Name>AIRI Civilization VII Bridge</Name>
+        <Name>Civilization VII AI Bridge</Name>
         <Description>Exposes visible single-player state and validated actions to a local AI companion.</Description>
-        <Authors>Project AIRI contributors</Authors>
+        <Authors>Bruno-BRG</Authors>
         <ShowInBrowser>1</ShowInBrowser>
     </Properties>
     <Dependencies>
@@ -15,11 +15,11 @@
         </Criteria>
     </ActionCriteria>
     <ActionGroups>
-        <ActionGroup id="airi-civ7-bridge-game" scope="game" criteria="always">
+        <ActionGroup id="civ7-ai-bridge-game" scope="game" criteria="always">
             <Actions>
                 <UIScripts>
-                    <Item>ui/airi-bridge-config.js</Item>
-                    <Item>ui/airi-bridge.js</Item>
+                    <Item>ui/civ7-ai-bridge-config.js</Item>
+                    <Item>ui/civ7-ai-bridge.js</Item>
                 </UIScripts>
             </Actions>
         </ActionGroup>

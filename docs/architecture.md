@@ -7,7 +7,7 @@ runner remains a useful fallback and independent post-action observer.
 Civilization VII add-on (visible single-player state + legal action IDs)
   -> authenticated HTTP on 127.0.0.1
     -> companion validation + state deduplication
-      -> NVIDIA Build OpenAI-compatible chat completion
+      -> NVIDIA Build Nemotron 3 Ultra chat completion with reasoning
         -> forced choose_action tool call
           -> companion legal-ID validation
             -> add-on correlation + game API revalidation

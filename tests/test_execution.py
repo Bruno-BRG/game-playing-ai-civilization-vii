@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from airi_civilization_vii.domain import Action, ActionKind, BoundingBox, Detection, Observation
-from airi_civilization_vii.execution import DryRunExecutor, resolve_click_point
+from civ7_ai.domain import Action, ActionKind, BoundingBox, Detection, Observation
+from civ7_ai.execution import DryRunExecutor, resolve_click_point
 
 
 def make_observation() -> Observation:

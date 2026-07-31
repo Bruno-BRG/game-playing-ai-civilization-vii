@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from airi_civilization_vii.installation import (
+from civ7_ai.installation import (
     InstallationSource,
     discover_installation,
     discover_saves_root,

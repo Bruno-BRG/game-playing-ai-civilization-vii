@@ -1,4 +1,4 @@
-"""Command-line entrypoint for capture, training, export, and guarded game runs."""
+"""Command-line entrypoint for capture, training, the add-on bridge, and guarded runs."""
 
 from __future__ import annotations
 
@@ -26,10 +26,40 @@ from .run import GameRun, timestamped_run_directory
 from .training import export_onnx, train_yolo26
 
 
+def _add_nvidia_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--model",
+        default=os.environ.get("NVIDIA_MODEL", "nvidia/nemotron-3-ultra-550b-a55b"),
+        help="NVIDIA Build model id",
+    )
+    parser.add_argument(
+        "--base-url",
+        default=os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
+    )
+    parser.add_argument("--request-timeout", type=float, default=120)
+    parser.add_argument("--temperature", type=float, default=1)
+    parser.add_argument("--top-p", type=float, default=0.95)
+    parser.add_argument("--max-tokens", type=int, default=16_384)
+    parser.add_argument("--reasoning-budget", type=int, default=16_384)
+
+
+def _nvidia_config_from(arguments: argparse.Namespace, api_key: str) -> NvidiaConfig:
+    return NvidiaConfig(
+        api_key=api_key,
+        model=arguments.model,
+        base_url=arguments.base_url,
+        timeout_seconds=arguments.request_timeout,
+        temperature=arguments.temperature,
+        top_p=arguments.top_p,
+        max_tokens=arguments.max_tokens,
+        reasoning_budget=arguments.reasoning_budget,
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the public CLI while keeping imports safe on non-Windows hosts."""
 
-    parser = argparse.ArgumentParser(prog="airi-civ7")
+    parser = argparse.ArgumentParser(prog="civ7-ai")
     subcommands = parser.add_subparsers(dest="command", required=True)
 
     doctor_parser = subcommands.add_parser("doctor", help="diagnose the local game environment")
@@ -50,23 +80,19 @@ def build_parser() -> argparse.ArgumentParser:
     addon_parser.add_argument("--port", type=int, default=43127)
 
     bridge_parser = subcommands.add_parser("bridge", help="serve the local NVIDIA Build companion")
-    bridge_parser.add_argument(
-        "--model",
-        default=os.environ.get("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct"),
-        help="NVIDIA Build model id",
-    )
-    bridge_parser.add_argument(
-        "--base-url",
-        default=os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
-    )
+    _add_nvidia_arguments(bridge_parser)
     bridge_parser.add_argument("--port", type=int, default=43127)
-    bridge_parser.add_argument("--request-timeout", type=float, default=60)
     bridge_parser.add_argument("--runs-root", type=Path, default=Path("bridge-runs"))
     bridge_parser.add_argument(
         "--execute",
         action="store_true",
         help="allow the add-on to execute the model's validated action",
     )
+
+    nvidia_test_parser = subcommands.add_parser(
+        "nvidia-test", help="verify NVIDIA credentials and constrained Nemotron tool calling"
+    )
+    _add_nvidia_arguments(nvidia_test_parser)
 
     run_parser = subcommands.add_parser("run", help="run the observable capture-plan-act loop")
     run_parser.add_argument("--model", type=Path, help="trained YOLO26 .pt or .onnx model")
@@ -124,11 +150,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     Call stack:
 
     main
+      -> BridgeServer.serve_forever
+        -> BridgeController.handle
+          -> NvidiaPlanner.choose_action
       -> GameRun.execute
-        -> CaptureSource.capture
-        -> Detector.detect
-        -> Planner.plan
-        -> Executor.execute
+          -> CaptureSource.capture
+          -> Detector.detect
+          -> Planner.plan
+          -> Executor.execute
     """
 
     arguments = build_parser().parse_args(argv)
@@ -182,7 +211,29 @@ def main(argv: Sequence[str] | None = None) -> int:
         addon_installation = install_addon(port=arguments.port)
         print(f"Installed add-on: {addon_installation.mod_root}")
         print(f"Bridge token: {addon_installation.token_path}")
-        print("Restart Civilization VII and enable 'AIRI Civilization VII Bridge'.")
+        print("Restart Civilization VII and enable 'Civilization VII AI Bridge'.")
+        return 0
+    if arguments.command == "nvidia-test":
+        api_key = os.environ.get("NVIDIA_API_KEY", "")
+        if not api_key:
+            raise ValueError("Set NVIDIA_API_KEY in this PowerShell session before testing NVIDIA")
+        nvidia_planner = NvidiaPlanner(_nvidia_config_from(arguments, api_key))
+        decision = nvidia_planner.choose_action(
+            {
+                "protocol_version": 1,
+                "observation_id": "nvidia-test",
+                "game": {"turn": 0, "is_multiplayer": False},
+                "player": {"is_turn_active": False},
+                "legal_actions": [
+                    {
+                        "id": "wait",
+                        "kind": "wait",
+                        "description": "Return wait to complete the connection test",
+                    }
+                ],
+            }
+        )
+        print(f"NVIDIA connection succeeded: {decision.action_id} — {decision.reason}")
         return 0
     if arguments.command == "bridge":
         api_key = os.environ.get("NVIDIA_API_KEY", "")
@@ -190,20 +241,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise ValueError("Set NVIDIA_API_KEY in this PowerShell session before starting bridge")
         run_directory = timestamped_run_directory(arguments.runs_root)
         controller = BridgeController(
-            NvidiaPlanner(
-                NvidiaConfig(
-                    api_key=api_key,
-                    model=arguments.model,
-                    base_url=arguments.base_url,
-                    timeout_seconds=arguments.request_timeout,
-                )
-            ),
+            NvidiaPlanner(_nvidia_config_from(arguments, api_key)),
             execute=arguments.execute,
             trace_path=run_directory / "trace.jsonl",
         )
         server = BridgeServer(("127.0.0.1", arguments.port), controller, read_bridge_token())
         mode = "EXECUTE" if arguments.execute else "DRY-RUN"
-        print(f"AIRI Civ VII bridge listening on http://127.0.0.1:{arguments.port} ({mode}).")
+        print(f"Civ VII AI bridge listening on http://127.0.0.1:{arguments.port} ({mode}).")
         print(f"NVIDIA model: {arguments.model}. Trace: {run_directory / 'trace.jsonl'}")
         try:
             server.serve_forever()

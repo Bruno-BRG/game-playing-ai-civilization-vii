@@ -1,5 +1,5 @@
 /*
- * AIRI Civilization VII bridge.
+ * Civilization VII AI bridge.
  *
  * The add-on never accepts arbitrary game API calls. It publishes a current list of action IDs,
  * then revalidates the selected action through Civ VII's own operation API before execution.
@@ -7,9 +7,9 @@
 (() => {
   "use strict";
 
-  const config = globalThis.AiriCiv7BridgeConfig;
+  const config = globalThis.Civ7AiBridgeConfig;
   if (!config?.endpoint || !config?.token) {
-    console.error("[AIRI Civ VII] Missing bridge configuration; reinstall the add-on.");
+    console.error("[Civ VII AI] Missing bridge configuration; reinstall the add-on.");
     return;
   }
 
@@ -252,7 +252,7 @@
     try {
       observation = buildObservation();
     } catch (error) {
-      console.error("[AIRI Civ VII] Could not build observation", error);
+      console.error("[Civ VII AI] Could not build observation", error);
       return;
     }
     if (!observation) return;
@@ -263,25 +263,25 @@
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-AIRI-Bridge-Token": config.token,
+          "X-Civ7-AI-Bridge-Token": config.token,
         },
         body: JSON.stringify(observation),
       });
       if (!response.ok) {
-        console.warn(`[AIRI Civ VII] Companion returned HTTP ${response.status}`);
+        console.warn(`[Civ VII AI] Companion returned HTTP ${response.status}`);
         return;
       }
       const decision = await response.json();
-      console.info(`[AIRI Civ VII] ${decision.action_id}: ${decision.reason}`);
+      console.info(`[Civ VII AI] ${decision.action_id}: ${decision.reason}`);
       executeDecision(decision);
     } catch (error) {
-      console.warn("[AIRI Civ VII] Companion is unavailable", error);
+      console.warn("[Civ VII AI] Companion is unavailable", error);
     } finally {
       requestInFlight = false;
     }
   }
 
-  console.info("[AIRI Civ VII] Structured single-player bridge loaded.");
+  console.info("[Civ VII AI] Structured single-player bridge loaded.");
   setInterval(poll, Math.max(1000, config.pollIntervalMs ?? 5000));
   setTimeout(poll, 1500);
 })();

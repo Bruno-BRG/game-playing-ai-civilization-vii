@@ -1,6 +1,6 @@
 import pytest
 
-from airi_civilization_vii.capture import CaptureRegion, require_window_foreground
+from civ7_ai.capture import CaptureRegion, require_window_foreground
 
 
 def test_capture_region_requires_positive_area() -> None:

@@ -9,46 +9,6 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "airi-game-civilization-vii"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "pillow" },
-]
-
-[package.optional-dependencies]
-vision = [
-    { name = "ultralytics" },
-]
-windows = [
-    { name = "dxcam", marker = "sys_platform == 'win32'" },
-    { name = "pydirectinput", marker = "sys_platform == 'win32'" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "pytest" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dxcam", marker = "sys_platform == 'win32' and extra == 'windows'", specifier = ">=0.0.5,<1" },
-    { name = "pillow", specifier = ">=11.3,<13" },
-    { name = "pydirectinput", marker = "sys_platform == 'win32' and extra == 'windows'", specifier = ">=1.0.4,<2" },
-    { name = "ultralytics", marker = "extra == 'vision'", specifier = ">=8.4.0,<9" },
-]
-provides-extras = ["vision", "windows"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=1.17,<2" },
-    { name = "pytest", specifier = ">=8.4,<10" },
-    { name = "ruff", specifier = ">=0.12,<1" },
-]
-
-[[package]]
 name = "certifi"
 version = "2026.7.22"
 source = { registry = "https://pypi.org/simple" }
@@ -116,6 +76,46 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/80/3f/bd97d3d9c613013d07cb7733d299385b41df37f0471310f5a73dc359f0b8/charset_normalizer-3.4.9-cp314-cp314t-win_amd64.whl", hash = "sha256:9b8e0f3107e2200b76f6054de99016eac3ee6762713587b36baaa7e4bd2ae177", size = 167620, upload-time = "2026-07-07T14:34:33.438Z" },
     { url = "https://files.pythonhosted.org/packages/3d/c6/eee9dca4439b1061f76373f06ea855678cc4a64c1c3c90b50e479edbb8eb/charset_normalizer-3.4.9-cp314-cp314t-win_arm64.whl", hash = "sha256:19ac87f93086ce37b86e098888555c4b4bc48102279bae3350098c0ed664b501", size = 158037, upload-time = "2026-07-07T14:34:35.018Z" },
     { url = "https://files.pythonhosted.org/packages/98/2b/f97f1c193fb855c345d678f5077d6926034db0722df74c8f057020e05a25/charset_normalizer-3.4.9-py3-none-any.whl", hash = "sha256:68e5f26a1ad57ded6d1cfb85331d1c1a195314756471d97758c48498bb4dcdf5", size = 64538, upload-time = "2026-07-07T14:34:56.993Z" },
+]
+
+[[package]]
+name = "civilization-vii-ai"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "pillow" },
+]
+
+[package.optional-dependencies]
+vision = [
+    { name = "ultralytics" },
+]
+windows = [
+    { name = "dxcam", marker = "sys_platform == 'win32'" },
+    { name = "pydirectinput", marker = "sys_platform == 'win32'" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dxcam", marker = "sys_platform == 'win32' and extra == 'windows'", specifier = ">=0.0.5,<1" },
+    { name = "pillow", specifier = ">=11.3,<13" },
+    { name = "pydirectinput", marker = "sys_platform == 'win32' and extra == 'windows'", specifier = ">=1.0.4,<2" },
+    { name = "ultralytics", marker = "extra == 'vision'", specifier = ">=8.4.0,<9" },
+]
+provides-extras = ["vision", "windows"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=1.17,<2" },
+    { name = "pytest", specifier = ">=8.4,<10" },
+    { name = "ruff", specifier = ">=0.12,<1" },
 ]
 
 [[package]]
@@ -291,8 +291,8 @@ name = "dxcam"
 version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "comtypes" },
-    { name = "numpy" },
+    { name = "comtypes", marker = "sys_platform == 'win32'" },
+    { name = "numpy", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/de/b7/b3d3e3fa42f347ac4b37fd639634935b4eefff1d5d61bdf72a6d8b906919/dxcam-0.3.0.tar.gz", hash = "sha256:d524da45adf70e044865e7d4e9098e655d6734951781155dda50c1292e20d8bd", size = 48742, upload-time = "2026-03-12T02:52:17.298Z" }
 wheels = [

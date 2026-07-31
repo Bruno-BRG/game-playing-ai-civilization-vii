@@ -1,6 +1,6 @@
 import pytest
 
-from airi_civilization_vii.cli import main
+from civ7_ai.cli import main
 
 
 def test_live_next_action_requires_explicit_gameplay_handoff() -> None:
@@ -28,3 +28,10 @@ def test_bridge_requires_nvidia_api_key(monkeypatch: pytest.MonkeyPatch) -> None
 
     with pytest.raises(ValueError, match="NVIDIA_API_KEY"):
         main(["bridge"])
+
+
+def test_nvidia_test_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+
+    with pytest.raises(ValueError, match="NVIDIA_API_KEY"):
+        main(["nvidia-test"])

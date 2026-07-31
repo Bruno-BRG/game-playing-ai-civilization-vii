@@ -180,7 +180,7 @@ class BridgeRequestHandler(BaseHTTPRequestHandler):
         if self.path != "/v1/observations":
             self._send_json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
             return
-        token = self.headers.get("X-AIRI-Bridge-Token", "")
+        token = self.headers.get("X-Civ7-AI-Bridge-Token", "")
         if not hmac.compare_digest(token, self.server.token):
             self._send_json(HTTPStatus.UNAUTHORIZED, {"error": "unauthorized"})
             return
@@ -222,4 +222,4 @@ class BridgeRequestHandler(BaseHTTPRequestHandler):
     def _cors_headers(self) -> None:
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-AIRI-Bridge-Token")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Civ7-AI-Bridge-Token")

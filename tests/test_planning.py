@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from airi_civilization_vii.domain import ActionKind, BoundingBox, Detection, Observation
-from airi_civilization_vii.planning import (
+from civ7_ai.domain import ActionKind, BoundingBox, Detection, Observation
+from civ7_ai.planning import (
     NextActionKeyboardPlanner,
     NextTurnBaselinePlanner,
     ObservePlanner,

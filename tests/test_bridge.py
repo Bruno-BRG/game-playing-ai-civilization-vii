@@ -6,9 +6,9 @@ from threading import Thread
 
 import pytest
 
-from airi_civilization_vii.bridge import BridgeController, BridgeServer
-from airi_civilization_vii.domain import JsonValue
-from airi_civilization_vii.nvidia import ModelDecision
+from civ7_ai.bridge import BridgeController, BridgeServer
+from civ7_ai.domain import JsonValue
+from civ7_ai.nvidia import ModelDecision
 
 
 class StubPlanner:
@@ -101,7 +101,7 @@ def test_loopback_server_authenticates_observations(tmp_path: Path) -> None:
             data=encoded_observation,
             headers={
                 "Content-Type": "application/json",
-                "X-AIRI-Bridge-Token": "bridge-secret",
+                "X-Civ7-AI-Bridge-Token": "bridge-secret",
             },
             method="POST",
         )

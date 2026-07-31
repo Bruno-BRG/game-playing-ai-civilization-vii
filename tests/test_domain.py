@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from airi_civilization_vii.domain import Action, ActionKind, BoundingBox, Detection, Observation
+from civ7_ai.domain import Action, ActionKind, BoundingBox, Detection, Observation
 
 
 def test_bounding_box_center_uses_pixel_coordinates() -> None:

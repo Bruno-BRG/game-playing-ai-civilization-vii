@@ -1,4 +1,4 @@
-"""Install the packaged AIRI bridge add-on into Civilization VII's user mod folder."""
+"""Install the packaged Civ VII AI bridge into the game's user mod folder."""
 
 from __future__ import annotations
 
@@ -43,19 +43,19 @@ def install_addon(
         / "Firaxis Games"
         / "Sid Meier's Civilization VII"
         / "Mods"
-        / "airi-civ7-bridge"
+        / "civ7-ai-bridge"
     )
-    token_path = local_app_data / "AIRI" / "Civilization VII" / "bridge-token.txt"
+    token_path = local_app_data / "Civilization VII AI" / "bridge-token.txt"
     token_path.parent.mkdir(parents=True, exist_ok=True)
     token = token_path.read_text(encoding="utf-8").strip() if token_path.exists() else ""
     if not token:
         token = secrets.token_urlsafe(32)
         token_path.write_text(token + "\n", encoding="utf-8")
 
-    addon_assets = files("airi_civilization_vii").joinpath("addon")
+    addon_assets = files("civ7_ai").joinpath("addon")
     mod_root.mkdir(parents=True, exist_ok=True)
     (mod_root / "ui").mkdir(parents=True, exist_ok=True)
-    for relative_path in ("airi-civ7-bridge.modinfo", "ui/airi-bridge.js"):
+    for relative_path in ("civ7-ai-bridge.modinfo", "ui/civ7-ai-bridge.js"):
         source = addon_assets.joinpath(*relative_path.split("/"))
         with (
             source.open("rb") as source_file,
@@ -64,13 +64,13 @@ def install_addon(
             shutil.copyfileobj(source_file, target_file)
 
     config = (
-        "globalThis.AiriCiv7BridgeConfig = Object.freeze({\n"
+        "globalThis.Civ7AiBridgeConfig = Object.freeze({\n"
         f"  endpoint: {json.dumps(f'http://127.0.0.1:{port}/v1/observations')},\n"
         f"  token: {json.dumps(token)},\n"
         "  pollIntervalMs: 5000,\n"
         "});\n"
     )
-    (mod_root / "ui" / "airi-bridge-config.js").write_text(config, encoding="utf-8")
+    (mod_root / "ui" / "civ7-ai-bridge-config.js").write_text(config, encoding="utf-8")
     return AddonInstallation(mod_root=mod_root, token_path=token_path, token=token)
 
 
@@ -87,9 +87,9 @@ def read_bridge_token(
         if not local_app_data_value:
             raise FileNotFoundError("LOCALAPPDATA is not available")
         local_app_data = Path(local_app_data_value)
-    token_path = local_app_data / "AIRI" / "Civilization VII" / "bridge-token.txt"
+    token_path = local_app_data / "Civilization VII AI" / "bridge-token.txt"
     if not token_path.is_file():
-        raise FileNotFoundError("Bridge token not found; run 'airi-civ7 install-addon' first")
+        raise FileNotFoundError("Bridge token not found; run 'civ7-ai install-addon' first")
     token = token_path.read_text(encoding="utf-8").strip()
     if not token:
         raise ValueError("Bridge token file is empty; reinstall the add-on")
