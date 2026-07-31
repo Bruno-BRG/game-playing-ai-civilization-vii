@@ -14,6 +14,7 @@ def test_installer_writes_mod_and_shared_secret(tmp_path: Path) -> None:
     assert installation.token_path == tmp_path / "Civilization VII AI" / "bridge-token.txt"
     config = (installation.mod_root / "ui" / "civ7-ai-bridge-config.js").read_text(encoding="utf-8")
     assert "http://127.0.0.1:43210/v1/observations" in config
+    assert "pollIntervalMs: 1000" in config
     assert installation.token in config
     assert read_bridge_token(local_app_data=tmp_path) == installation.token
 

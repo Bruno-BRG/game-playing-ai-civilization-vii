@@ -67,7 +67,7 @@ def install_addon(
         "globalThis.Civ7AiBridgeConfig = Object.freeze({\n"
         f"  endpoint: {json.dumps(f'http://127.0.0.1:{port}/v1/observations')},\n"
         f"  token: {json.dumps(token)},\n"
-        "  pollIntervalMs: 5000,\n"
+        "  pollIntervalMs: 1000,\n"
         "});\n"
     )
     (mod_root / "ui" / "civ7-ai-bridge-config.js").write_text(config, encoding="utf-8")

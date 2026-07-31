@@ -28,31 +28,74 @@ from .training import export_onnx, train_yolo26
 
 def _add_nvidia_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
+        "--profile",
+        choices=["fast", "strategic"],
+        default="fast",
+        help="fast uses Nemotron Nano; strategic uses thinking-enabled Nemotron Ultra",
+    )
+    parser.add_argument(
         "--model",
-        default=os.environ.get("NVIDIA_MODEL", "nvidia/nemotron-3-ultra-550b-a55b"),
-        help="NVIDIA Build model id",
+        default=os.environ.get("NVIDIA_MODEL"),
+        help="override the profile's NVIDIA Build model id",
     )
     parser.add_argument(
         "--base-url",
         default=os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
     )
-    parser.add_argument("--request-timeout", type=float, default=120)
-    parser.add_argument("--temperature", type=float, default=1)
-    parser.add_argument("--top-p", type=float, default=0.95)
-    parser.add_argument("--max-tokens", type=int, default=16_384)
-    parser.add_argument("--reasoning-budget", type=int, default=16_384)
+    parser.add_argument("--request-timeout", type=float)
+    parser.add_argument("--temperature", type=float)
+    parser.add_argument("--top-p", type=float)
+    parser.add_argument("--max-tokens", type=int)
+    parser.add_argument("--reasoning-budget", type=int)
+    parser.add_argument(
+        "--thinking",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="override thinking for the selected profile",
+    )
 
 
 def _nvidia_config_from(arguments: argparse.Namespace, api_key: str) -> NvidiaConfig:
+    if arguments.profile == "strategic":
+        default_model = "nvidia/nemotron-3-ultra-550b-a55b"
+        default_timeout = 120.0
+        default_temperature = 1.0
+        default_top_p = 0.95
+        default_max_tokens = 16_384
+        default_thinking = True
+        default_reasoning_budget = 16_384
+    else:
+        default_model = "nvidia/nemotron-3-nano-30b-a3b"
+        default_timeout = 30.0
+        default_temperature = 0.6
+        default_top_p = 0.95
+        default_max_tokens = 512
+        default_thinking = False
+        default_reasoning_budget = 0
+    enable_thinking = arguments.thinking if arguments.thinking is not None else default_thinking
+    reasoning_budget = (
+        arguments.reasoning_budget
+        if arguments.reasoning_budget is not None
+        else default_reasoning_budget
+    )
+    if not enable_thinking and arguments.reasoning_budget is None:
+        reasoning_budget = 0
     return NvidiaConfig(
         api_key=api_key,
-        model=arguments.model,
+        model=arguments.model or default_model,
         base_url=arguments.base_url,
-        timeout_seconds=arguments.request_timeout,
-        temperature=arguments.temperature,
-        top_p=arguments.top_p,
-        max_tokens=arguments.max_tokens,
-        reasoning_budget=arguments.reasoning_budget,
+        timeout_seconds=(
+            arguments.request_timeout if arguments.request_timeout is not None else default_timeout
+        ),
+        temperature=(
+            arguments.temperature if arguments.temperature is not None else default_temperature
+        ),
+        top_p=arguments.top_p if arguments.top_p is not None else default_top_p,
+        max_tokens=(
+            arguments.max_tokens if arguments.max_tokens is not None else default_max_tokens
+        ),
+        enable_thinking=enable_thinking,
+        reasoning_budget=reasoning_budget,
     )
 
 
@@ -217,7 +260,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         api_key = os.environ.get("NVIDIA_API_KEY", "")
         if not api_key:
             raise ValueError("Set NVIDIA_API_KEY in this PowerShell session before testing NVIDIA")
-        nvidia_planner = NvidiaPlanner(_nvidia_config_from(arguments, api_key))
+        nvidia_config = _nvidia_config_from(arguments, api_key)
+        nvidia_planner = NvidiaPlanner(nvidia_config)
         decision = nvidia_planner.choose_action(
             {
                 "protocol_version": 1,
@@ -233,22 +277,26 @@ def main(argv: Sequence[str] | None = None) -> int:
                 ],
             }
         )
-        print(f"NVIDIA connection succeeded: {decision.action_id} — {decision.reason}")
+        print(
+            f"NVIDIA connection succeeded with {nvidia_config.model}: "
+            f"{decision.action_id} — {decision.reason}"
+        )
         return 0
     if arguments.command == "bridge":
         api_key = os.environ.get("NVIDIA_API_KEY", "")
         if not api_key:
             raise ValueError("Set NVIDIA_API_KEY in this PowerShell session before starting bridge")
         run_directory = timestamped_run_directory(arguments.runs_root)
+        nvidia_config = _nvidia_config_from(arguments, api_key)
         controller = BridgeController(
-            NvidiaPlanner(_nvidia_config_from(arguments, api_key)),
+            NvidiaPlanner(nvidia_config),
             execute=arguments.execute,
             trace_path=run_directory / "trace.jsonl",
         )
         server = BridgeServer(("127.0.0.1", arguments.port), controller, read_bridge_token())
         mode = "EXECUTE" if arguments.execute else "DRY-RUN"
         print(f"Civ VII AI bridge listening on http://127.0.0.1:{arguments.port} ({mode}).")
-        print(f"NVIDIA model: {arguments.model}. Trace: {run_directory / 'trace.jsonl'}")
+        print(f"NVIDIA model: {nvidia_config.model}. Trace: {run_directory / 'trace.jsonl'}")
         try:
             server.serve_forever()
         except KeyboardInterrupt:

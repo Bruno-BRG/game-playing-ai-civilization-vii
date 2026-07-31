@@ -71,7 +71,7 @@ $env:NVIDIA_API_KEY = "nvapi-your-key"
 Verify the credential and Nemotron tool-calling contract without opening the game:
 
 ```powershell
-uv run civ7-ai nvidia-test
+uv run civ7-ai nvidia-test --profile fast
 ```
 
 Install the packaged add-on into Civilization VII's user mod directory:
@@ -85,7 +85,7 @@ load a single-player match. Start the companion in dry-run mode first:
 
 ```powershell
 uv run civ7-ai bridge `
-  --model nvidia/nemotron-3-ultra-550b-a55b `
+  --profile fast `
   --runs-root bridge-runs
 ```
 
@@ -96,14 +96,23 @@ trace, explicitly enable execution:
 
 ```powershell
 uv run civ7-ai bridge `
-  --model nvidia/nemotron-3-ultra-550b-a55b `
+  --profile fast `
   --execute `
   --runs-root bridge-runs
 ```
 
-The default model is `nvidia/nemotron-3-ultra-550b-a55b` with thinking enabled, temperature `1`,
-top-p `0.95`, and a 16,384-token reasoning budget. The NVIDIA endpoint defaults to
-`https://integrate.api.nvidia.com/v1`; `NVIDIA_MODEL` and
+The default `fast` profile uses `nvidia/nemotron-3-nano-30b-a3b` with thinking disabled,
+temperature `0.6`, top-p `0.95`, and at most 512 output tokens. In a live endpoint benchmark it
+averaged about one second across three constrained Civilization VII decisions. For occasional
+long-horizon planning, select the slower reasoning profile explicitly:
+
+```powershell
+uv run civ7-ai nvidia-test --profile strategic
+```
+
+The `strategic` profile uses `nvidia/nemotron-3-ultra-550b-a55b` with thinking and a 16,384-token
+reasoning budget. The NVIDIA endpoint defaults to `https://integrate.api.nvidia.com/v1`;
+`NVIDIA_MODEL` and
 `NVIDIA_BASE_URL` may be used instead of repeating command options. The API key remains solely in
 the companion process. The model is forced to call `choose_action` with one exact ID from the
 current `legal_actions` list, and the add-on revalidates that action immediately before execution.
@@ -214,6 +223,7 @@ step. See the [official YOLO26 documentation](https://docs.ultralytics.com/model
 ## Design documents
 
 - [Architecture](docs/architecture.md)
+- [NVIDIA model benchmark](docs/nvidia-models.md)
 - [Dataset contract](docs/dataset.md)
 - [Roadmap](docs/roadmap.md)
 

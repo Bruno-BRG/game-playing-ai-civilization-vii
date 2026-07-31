@@ -1,6 +1,9 @@
 import pytest
 
+import civ7_ai.cli as cli
 from civ7_ai.cli import main
+from civ7_ai.domain import JsonValue
+from civ7_ai.nvidia import ModelDecision, NvidiaConfig
 
 
 def test_live_next_action_requires_explicit_gameplay_handoff() -> None:
@@ -35,3 +38,25 @@ def test_nvidia_test_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
 
     with pytest.raises(ValueError, match="NVIDIA_API_KEY"):
         main(["nvidia-test"])
+
+
+def test_strategic_profile_selects_thinking_enabled_ultra(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    received_configs: list[NvidiaConfig] = []
+
+    class StubNvidiaPlanner:
+        def __init__(self, config: NvidiaConfig) -> None:
+            received_configs.append(config)
+
+        def choose_action(self, _observation: dict[str, JsonValue]) -> ModelDecision:
+            return ModelDecision(action_id="wait", reason="Profile verified.")
+
+    monkeypatch.setenv("NVIDIA_API_KEY", "test-key")
+    monkeypatch.setattr(cli, "NvidiaPlanner", StubNvidiaPlanner)
+
+    assert main(["nvidia-test", "--profile", "strategic"]) == 0
+    assert len(received_configs) == 1
+    assert received_configs[0].model == "nvidia/nemotron-3-ultra-550b-a55b"
+    assert received_configs[0].enable_thinking is True
+    assert received_configs[0].reasoning_budget == 16_384

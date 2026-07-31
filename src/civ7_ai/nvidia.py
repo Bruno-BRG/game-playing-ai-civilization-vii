@@ -23,13 +23,14 @@ class NvidiaConfig:
     """Connection and reasoning settings for the NVIDIA Build Nemotron model."""
 
     api_key: str
-    model: str = "nvidia/nemotron-3-ultra-550b-a55b"
+    model: str = "nvidia/nemotron-3-nano-30b-a3b"
     base_url: str = "https://integrate.api.nvidia.com/v1"
-    timeout_seconds: float = 60
-    temperature: float = 1
+    timeout_seconds: float = 30
+    temperature: float = 0.6
     top_p: float = 0.95
-    max_tokens: int = 16_384
-    reasoning_budget: int = 16_384
+    max_tokens: int = 512
+    enable_thinking: bool = False
+    reasoning_budget: int = 0
 
     def __post_init__(self) -> None:
         if not self.api_key.strip():
@@ -48,6 +49,8 @@ class NvidiaConfig:
             raise ValueError("NVIDIA max_tokens must be positive")
         if not 0 <= self.reasoning_budget <= self.max_tokens:
             raise ValueError("NVIDIA reasoning_budget must be between 0 and max_tokens")
+        if self.reasoning_budget and not self.enable_thinking:
+            raise ValueError("NVIDIA reasoning_budget requires enable_thinking")
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,16 +117,20 @@ class NvidiaPlanner:
         legal_id_values: list[JsonValue] = []
         legal_id_values.extend(legal_ids)
 
+        chat_template_kwargs: JsonObject = {
+            "enable_thinking": self._config.enable_thinking,
+        }
+        if self._config.enable_thinking:
+            # Nemotron 3 Ultra requires non-empty content so its reasoning parser can preserve
+            # the final tool call after the thinking trace.
+            chat_template_kwargs["force_nonempty_content"] = True
+
         request_body: JsonObject = {
             "model": self._config.model,
             "temperature": self._config.temperature,
             "top_p": self._config.top_p,
             "max_tokens": self._config.max_tokens,
-            "chat_template_kwargs": {
-                "enable_thinking": True,
-                "force_nonempty_content": True,
-            },
-            "reasoning_budget": self._config.reasoning_budget,
+            "chat_template_kwargs": chat_template_kwargs,
             "messages": [
                 {
                     "role": "system",
@@ -156,8 +163,10 @@ class NvidiaPlanner:
                     },
                 }
             ],
-            "tool_choice": "required",
+            "tool_choice": {"type": "function", "function": {"name": "choose_action"}},
         }
+        if self._config.reasoning_budget:
+            request_body["reasoning_budget"] = self._config.reasoning_budget
         response = self._transport(
             f"{self._config.base_url.rstrip('/')}/chat/completions",
             {

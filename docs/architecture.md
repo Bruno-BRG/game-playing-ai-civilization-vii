@@ -7,7 +7,7 @@ runner remains a useful fallback and independent post-action observer.
 Civilization VII add-on (visible single-player state + legal action IDs)
   -> authenticated HTTP on 127.0.0.1
     -> companion validation + state deduplication
-      -> NVIDIA Build Nemotron 3 Ultra chat completion with reasoning
+      -> NVIDIA Build fast or strategic Nemotron profile
         -> forced choose_action tool call
           -> companion legal-ID validation
             -> add-on correlation + game API revalidation
@@ -17,6 +17,10 @@ Civilization VII add-on (visible single-player state + legal action IDs)
 The NVIDIA API key exists only in the local companion's `NVIDIA_API_KEY` environment variable.
 The add-on holds a separate generated loopback token, never the provider credential. The companion
 is dry-run unless `--execute` is present.
+
+Routine actions use Nemotron 3 Nano 30B-A3B with thinking disabled and a named tool choice. This
+keeps the hosted request near one second while preserving constrained tool selection. Nemotron 3
+Ultra is an explicit strategic profile for future long-horizon decisions, not the per-action loop.
 
 ## Structured bridge boundaries
 
