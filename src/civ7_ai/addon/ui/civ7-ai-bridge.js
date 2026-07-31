@@ -14,6 +14,9 @@
   }
 
   let observationSequence = 0;
+  // This value changes when Civ VII reloads the add-on. It prevents the companion from treating
+  // a freshly loaded save as the same deduplicated state from a previous game session.
+  const sessionId = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
   let currentObservationId = null;
   let currentActions = new Map();
   let pendingObservationId = null;
@@ -195,6 +198,7 @@
     currentActions = actions;
     return {
       protocol_version: 1,
+      session_id: sessionId,
       observation_id: observationId,
       captured_at: new Date().toISOString(),
       game: {

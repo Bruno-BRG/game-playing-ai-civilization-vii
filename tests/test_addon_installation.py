@@ -56,6 +56,7 @@ def test_addon_uses_civ_local_storage_transport() -> None:
     assert "localStorage.setItem(observationStorageKey" in addon_script
     assert "localStorage.getItem(decisionStorageKey" in addon_script
     assert "PlayerOperationTypes.SET_TECH_TREE_TARGET_NODE" in addon_script
+    assert "session_id: sessionId" in addon_script
     assert "new XMLHttpRequest()" not in addon_script
     assert "fetch(config.endpoint" not in addon_script
 
