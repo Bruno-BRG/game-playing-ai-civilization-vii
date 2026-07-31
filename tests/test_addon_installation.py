@@ -55,6 +55,7 @@ def test_addon_uses_civ_local_storage_transport() -> None:
     # LocalStorage database is the supported local exchange that survives that sandbox.
     assert "localStorage.setItem(observationStorageKey" in addon_script
     assert "localStorage.getItem(decisionStorageKey" in addon_script
+    assert "PlayerOperationTypes.SET_TECH_TREE_TARGET_NODE" in addon_script
     assert "new XMLHttpRequest()" not in addon_script
     assert "fetch(config.endpoint" not in addon_script
 

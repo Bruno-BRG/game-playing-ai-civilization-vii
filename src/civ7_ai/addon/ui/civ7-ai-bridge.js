@@ -244,6 +244,13 @@
           PlayerOperationTypes.SET_TECH_TREE_NODE,
           args,
         );
+        // The stock tech chooser clears its queued target immediately after selecting a tech.
+        // Without this companion request, the chooser can stay pending even though the node is valid.
+        Game.PlayerOperations.sendRequest(
+          GameContext.localPlayerID,
+          PlayerOperationTypes.SET_TECH_TREE_TARGET_NODE,
+          { ProgressionTreeNodeType: ProgressionTreeNodeTypes.NO_NODE },
+        );
       }
     }
   }
