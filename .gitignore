@@ -11,6 +11,7 @@ build/
 *.egg-info/
 bridge-runs/
 bridge-session.*.log
+bridge-local-storage.*.log
 runs/
 smoke-runs/
 live-runs/
