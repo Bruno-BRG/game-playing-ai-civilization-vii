@@ -21,3 +21,10 @@ def test_live_next_action_is_limited_to_one_supervised_step() -> None:
                 "--execute",
             ]
         )
+
+
+def test_bridge_requires_nvidia_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+
+    with pytest.raises(ValueError, match="NVIDIA_API_KEY"):
+        main(["bridge"])

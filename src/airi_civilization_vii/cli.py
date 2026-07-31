@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from collections.abc import Sequence
 from pathlib import Path
 
+from .addon_installation import install_addon, read_bridge_token
+from .bridge import BridgeController, BridgeServer
 from .capture import CaptureSource, DxcamCapture, ImageCapture, WindowTarget, find_window
 from .execution import DryRunExecutor, Executor, WindowsInputExecutor
 from .handoff import HandoffState, wait_for_handoff
@@ -16,6 +19,7 @@ from .installation import (
     discover_saves_root,
     launch_game,
 )
+from .nvidia import NvidiaConfig, NvidiaPlanner
 from .perception import NullDetector, YoloDetector
 from .planning import NextActionKeyboardPlanner, NextTurnBaselinePlanner, ObservePlanner, Planner
 from .run import GameRun, timestamped_run_directory
@@ -38,6 +42,32 @@ def build_parser() -> argparse.ArgumentParser:
         "--executable",
         choices=[item.value for item in GameExecutable],
         default=GameExecutable.LAUNCHER.value,
+    )
+
+    addon_parser = subcommands.add_parser(
+        "install-addon", help="install the structured Civilization VII bridge add-on"
+    )
+    addon_parser.add_argument("--port", type=int, default=43127)
+
+    bridge_parser = subcommands.add_parser(
+        "bridge", help="serve the local NVIDIA Build companion"
+    )
+    bridge_parser.add_argument(
+        "--model",
+        default=os.environ.get("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct"),
+        help="NVIDIA Build model id",
+    )
+    bridge_parser.add_argument(
+        "--base-url",
+        default=os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
+    )
+    bridge_parser.add_argument("--port", type=int, default=43127)
+    bridge_parser.add_argument("--request-timeout", type=float, default=60)
+    bridge_parser.add_argument("--runs-root", type=Path, default=Path("bridge-runs"))
+    bridge_parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="allow the add-on to execute the model's validated action",
     )
 
     run_parser = subcommands.add_parser("run", help="run the observable capture-plan-act loop")
@@ -149,6 +179,40 @@ def main(argv: Sequence[str] | None = None) -> int:
             executable=GameExecutable(arguments.executable),
         )
         print(f"Started {arguments.executable} process {process_id}")
+        return 0
+    if arguments.command == "install-addon":
+        addon_installation = install_addon(port=arguments.port)
+        print(f"Installed add-on: {addon_installation.mod_root}")
+        print(f"Bridge token: {addon_installation.token_path}")
+        print("Restart Civilization VII and enable 'AIRI Civilization VII Bridge'.")
+        return 0
+    if arguments.command == "bridge":
+        api_key = os.environ.get("NVIDIA_API_KEY", "")
+        if not api_key:
+            raise ValueError("Set NVIDIA_API_KEY in this PowerShell session before starting bridge")
+        run_directory = timestamped_run_directory(arguments.runs_root)
+        controller = BridgeController(
+            NvidiaPlanner(
+                NvidiaConfig(
+                    api_key=api_key,
+                    model=arguments.model,
+                    base_url=arguments.base_url,
+                    timeout_seconds=arguments.request_timeout,
+                )
+            ),
+            execute=arguments.execute,
+            trace_path=run_directory / "trace.jsonl",
+        )
+        server = BridgeServer(("127.0.0.1", arguments.port), controller, read_bridge_token())
+        mode = "EXECUTE" if arguments.execute else "DRY-RUN"
+        print(f"AIRI Civ VII bridge listening on http://127.0.0.1:{arguments.port} ({mode}).")
+        print(f"NVIDIA model: {arguments.model}. Trace: {run_directory / 'trace.jsonl'}")
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            print("Bridge stopped.")
+        finally:
+            server.server_close()
         return 0
     if arguments.command == "train":
         train_yolo26(

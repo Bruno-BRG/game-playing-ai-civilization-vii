@@ -1,8 +1,38 @@
 # Architecture
 
-The first milestone is deliberately narrower than “play any Civilization VII campaign.” It
-must complete ten turns from a prepared single-player save while producing enough artifacts
-to explain every action.
+The primary architecture uses Civilization VII's supported UI-script mod surface. The visual
+runner remains a useful fallback and independent post-action observer.
+
+```text
+Civilization VII add-on (visible single-player state + legal action IDs)
+  -> authenticated HTTP on 127.0.0.1
+    -> companion validation + state deduplication
+      -> NVIDIA Build OpenAI-compatible chat completion
+        -> forced choose_action tool call
+          -> companion legal-ID validation
+            -> add-on correlation + game API revalidation
+              -> PlayerOperations or native next-action event
+```
+
+The NVIDIA API key exists only in the local companion's `NVIDIA_API_KEY` environment variable.
+The add-on holds a separate generated loopback token, never the provider credential. The companion
+is dry-run unless `--execute` is present.
+
+## Structured bridge boundaries
+
+- **Add-on observation** includes the local player, yields, cities, units, research choices, and
+  currently visible tiles near local entities. Fogged tiles and multiplayer/hotseat are excluded.
+- **Legal action construction** happens inside the game. Each parameterized operation must pass
+  Civilization VII's `canStart` check before it is offered.
+- **Planning** can select only an exact action ID through a forced JSON-schema tool call.
+- **Correlation** ties a decision to one observation. The add-on rejects stale decisions and the
+  companion prevents an unchanged state from executing twice.
+- **Execution** re-runs the native validity check immediately before `sendRequest`. The
+  `next_action` path dispatches the same event as Civilization VII's own binding so required
+  blockers remain authoritative.
+- **Tracing** stores the full structured observation and decision as JSONL for audit and replay.
+
+## Visual fallback
 
 ```text
 Civilization VII window
@@ -15,29 +45,16 @@ Civilization VII window
               -> frame + JSONL trace
 ```
 
-## Boundaries
+Capture, perception, planning, execution, and run orchestration remain separate boundaries. One
+action per observation prevents a long visual plan from continuing after the screen has changed.
+Live desktop input checks that the exact captured Civilization VII window is still foreground.
 
-- **Capture** knows how to acquire pixels but has no gameplay policy.
-- **Perception** converts pixels into stable labels and bounding boxes.
-- **Planning** sees only normalized observations and returns one constrained action.
-- **Execution** resolves the action against the same observation and owns side effects.
-- **Run orchestration** correlates screenshots, observations, actions, and results.
+## Add-on evolution
 
-One action per observation prevents a long plan from continuing after the screen has changed.
-Input is disabled by default. When explicitly enabled, the executor checks that the configured
-Civilization VII window is foreground immediately before every side effect.
+The bridge currently exposes state and the smallest useful action set: research selection plus the
+native next-action resolver. New production, unit, city, and diplomacy operations should follow the
+same offer-by-ID, `canStart`, correlate, and revalidate protocol. No operation may accept an
+arbitrary API name or unvalidated model parameters.
 
-DXcam captures desktop pixels rather than an occluded window surface. The capture backend therefore
-correlates the exact Windows `HWND` discovered at run start and refuses each frame unless that same
-window is foreground. This prevents another application covering the game from entering a dataset or
-driving a false action.
-
-## Planned telemetry mod
-
-The official Modding SDK can eventually expose single-player state that is hard to infer from
-pixels, such as current turn, yields, selected research, city queues, and unit identifiers. The
-mod must write or serve read-only, versioned snapshots. It must not inspect process memory,
-automate multiplayer, or make hidden opponent information available to the planner.
-
-Visual perception remains necessary for UI grounding and for verifying that an intended action
-actually changed the screen.
+Visual perception remains useful for UI grounding and for verifying that an intended structured
+action actually changed the visible game.

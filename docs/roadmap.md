@@ -22,16 +22,20 @@
 
 ## M3 — Strategic planner
 
-- Define a JSON-schema planner protocol
-- Connect an OpenAI-compatible multimodal or text model through AIRI
+- [x] Define a JSON-schema planner protocol
+- [x] Connect NVIDIA Build through its OpenAI-compatible endpoint
+- [x] Force decisions through exact legal action IDs
 - Maintain campaign goals, turn summaries, and short-term memory
 - Evaluate decisions against deterministic prepared saves
 
 ## M4 — Mod telemetry
 
-- Build a read-only single-player telemetry mod with the official SDK
+- [x] Build a versioned single-player structured-state add-on
+- [x] Export local yields, cities, units, research, and revealed nearby tiles
+- [x] Add game-validated research and native next-action commands
+- Add production, settlement, tactical movement, and diplomacy commands
 - Correlate stable game identifiers with visual UI targets
-- Version and validate the telemetry envelope
+- [x] Version and validate the telemetry envelope
 
 ## M5 — Project AIRI integration
 

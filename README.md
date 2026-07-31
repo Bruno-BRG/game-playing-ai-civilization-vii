@@ -5,9 +5,9 @@
   <a href="https://github.com/moeru-ai/airi">Project AIRI</a>.
 </p>
 
-This project combines YOLO26 computer vision, constrained planning, and guarded desktop input.
-The first target is intentionally measurable: complete ten turns from a prepared single-player
-save while recording every frame, detection, decision, and action.
+This project combines a structured Civilization VII add-on, constrained NVIDIA Build planning,
+and a YOLO26 visual fallback. The add-on is the primary control path: it publishes only visible
+single-player state and a list of game-validated actions to an authenticated local companion.
 
 > [!IMPORTANT]
 > The project is for owned copies of the game and local single-player research. It does not read
@@ -27,9 +27,12 @@ save while recording every frame, detection, decision, and action.
 - [x] Explicit in-game F8 handoff before observation or input
 - [x] Screenshot and JSONL trace artifacts
 - [x] Conservative next-turn baseline planner
+- [x] Installable Civilization VII structured-state add-on
+- [x] Authenticated loopback companion with dry-run default
+- [x] NVIDIA Build OpenAI-compatible tool-calling planner
+- [x] Research selection and native next-action execution
 - [ ] Civilization VII dataset and trained weights
-- [ ] OCR and strategic LLM planner
-- [ ] Official SDK telemetry mod
+- [ ] Production, city placement, diplomacy, and tactical unit actions
 - [ ] AIRI service integration
 
 ## Setup
@@ -57,7 +60,58 @@ API. Launch through the entitlement-aware game launcher with:
 uv run airi-civ7 launch
 ```
 
-## Safe smoke test
+## NVIDIA Build add-on
+
+Create an API key in [NVIDIA Build](https://build.nvidia.com/), then put it only in the current
+PowerShell session. Do not paste it into the game add-on, a command-line argument, a trace, or Git:
+
+```powershell
+$env:NVIDIA_API_KEY = "nvapi-your-key"
+```
+
+Install the packaged add-on into Civilization VII's user mod directory:
+
+```powershell
+uv run airi-civ7 install-addon
+```
+
+Restart Civilization VII, enable **AIRI Civilization VII Bridge** under Additional Content, and
+load a single-player match. Start the companion in dry-run mode first:
+
+```powershell
+uv run airi-civ7 bridge `
+  --model meta/llama-3.3-70b-instruct `
+  --runs-root bridge-runs
+```
+
+The companion binds only to `127.0.0.1`, authenticates the add-on with a generated local token,
+and writes every observation and decision to `bridge-runs/<UTC timestamp>/trace.jsonl`. Dry-run
+returns the model's choice but does not authorize the add-on to execute it. After reviewing the
+trace, explicitly enable execution:
+
+```powershell
+uv run airi-civ7 bridge `
+  --model meta/llama-3.3-70b-instruct `
+  --execute `
+  --runs-root bridge-runs
+```
+
+The NVIDIA endpoint defaults to `https://integrate.api.nvidia.com/v1`; `NVIDIA_MODEL` and
+`NVIDIA_BASE_URL` may be used instead of repeating command options. The API key remains solely in
+the companion process. The model is forced to call `choose_action` with one exact ID from the
+current `legal_actions` list, and the add-on revalidates that action immediately before execution.
+
+Current add-on actions are research selection and Civilization VII's native next-action resolver.
+The native resolver opens blockers and required decisions before it ends a turn. Tactical movement,
+production, diplomacy, and settlement decisions remain on the roadmap, so this is a safe vertical
+slice rather than an autonomous full campaign player yet.
+
+The add-on refuses multiplayer/hotseat and exports map telemetry only for currently visible tiles.
+See NVIDIA's [LLM API reference](https://docs.api.nvidia.com/nim/reference/llm-apis),
+[function-calling guide](https://docs.nvidia.com/nim/large-language-models/latest/function-calling.html),
+and 2K's [Civilization VII third-party mods FAQ](https://support.civilization.com/hc/en-us/articles/44037954953235-Civilization-VII-Third-Party-Party-Mods-FAQ).
+
+## Screen-based fallback
 
 Run against a local fixture without loading a model or injecting input:
 
