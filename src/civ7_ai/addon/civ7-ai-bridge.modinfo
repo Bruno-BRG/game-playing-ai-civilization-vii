@@ -4,7 +4,9 @@
         <Name>Civilization VII AI Bridge</Name>
         <Description>Exposes visible single-player state and validated actions to a local AI companion.</Description>
         <Authors>Bruno-BRG</Authors>
+        <AffectsSavedGames>0</AffectsSavedGames>
         <ShowInBrowser>1</ShowInBrowser>
+        <EnabledByDefault>1</EnabledByDefault>
     </Properties>
     <Dependencies>
         <Mod id="base-standard" title="Base Game" />

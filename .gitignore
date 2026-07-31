@@ -9,6 +9,8 @@ Ultralytics/
 dist/
 build/
 *.egg-info/
+bridge-runs/
+bridge-session.*.log
 runs/
 smoke-runs/
 live-runs/

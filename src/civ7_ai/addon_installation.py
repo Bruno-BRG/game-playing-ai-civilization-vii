@@ -21,6 +21,22 @@ class AddonInstallation:
     token: str
 
 
+def _discover_user_data_root(local_app_data: Path) -> Path:
+    """Prefer an active Epic data root and otherwise use the standard PC directory."""
+
+    firaxis_root = local_app_data / "Firaxis Games"
+    candidates = (
+        firaxis_root / "Sid Meier's Civilization VII (Epic)",
+        firaxis_root / "Sid Meier's Civilization VII",
+    )
+    for candidate in candidates:
+        # The Epic build adds a platform suffix. Runtime-owned files distinguish its real
+        # user-data root from an empty generic directory left by an older installer.
+        if (candidate / "Mods.sqlite").is_file() or (candidate / "AppOptions.txt").is_file():
+            return candidate
+    return candidates[-1]
+
+
 def install_addon(
     *,
     port: int = 43127,
@@ -38,13 +54,8 @@ def install_addon(
             raise FileNotFoundError("LOCALAPPDATA is not available")
         local_app_data = Path(local_app_data_value)
 
-    mod_root = (
-        local_app_data
-        / "Firaxis Games"
-        / "Sid Meier's Civilization VII"
-        / "Mods"
-        / "civ7-ai-bridge"
-    )
+    user_data_root = _discover_user_data_root(local_app_data)
+    mod_root = user_data_root / "Mods" / "civ7-ai-bridge"
     token_path = local_app_data / "Civilization VII AI" / "bridge-token.txt"
     token_path.parent.mkdir(parents=True, exist_ok=True)
     token = token_path.read_text(encoding="utf-8").strip() if token_path.exists() else ""

@@ -80,6 +80,10 @@ Install the packaged add-on into Civilization VII's user mod directory:
 uv run civ7-ai install-addon
 ```
 
+The installer detects the platform-specific user-data root. Epic uses
+`%LOCALAPPDATA%\Firaxis Games\Sid Meier's Civilization VII (Epic)`, while other PC builds use the
+unsuffixed directory.
+
 Restart Civilization VII, enable **Civilization VII AI Bridge** under Additional Content, and
 load a single-player match. Start the companion in dry-run mode first:
 

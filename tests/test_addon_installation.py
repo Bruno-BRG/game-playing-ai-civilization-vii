@@ -24,3 +24,13 @@ def test_installer_preserves_token_across_updates(tmp_path: Path) -> None:
     second = install_addon(local_app_data=tmp_path)
 
     assert second.token == first.token
+
+
+def test_installer_uses_epic_user_data_root_when_game_created_it(tmp_path: Path) -> None:
+    epic_root = tmp_path / "Firaxis Games" / "Sid Meier's Civilization VII (Epic)"
+    epic_root.mkdir(parents=True)
+    (epic_root / "Mods.sqlite").touch()
+
+    installation = install_addon(local_app_data=tmp_path)
+
+    assert installation.mod_root == epic_root / "Mods" / "civ7-ai-bridge"
