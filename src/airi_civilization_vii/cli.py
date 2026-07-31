@@ -49,9 +49,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     addon_parser.add_argument("--port", type=int, default=43127)
 
-    bridge_parser = subcommands.add_parser(
-        "bridge", help="serve the local NVIDIA Build companion"
-    )
+    bridge_parser = subcommands.add_parser("bridge", help="serve the local NVIDIA Build companion")
     bridge_parser.add_argument(
         "--model",
         default=os.environ.get("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct"),

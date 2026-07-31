@@ -76,9 +76,7 @@ def test_multiplayer_fails_closed_without_calling_model(tmp_path: Path) -> None:
 
 
 def test_loopback_server_authenticates_observations(tmp_path: Path) -> None:
-    controller = BridgeController(
-        StubPlanner(), execute=False, trace_path=tmp_path / "trace.jsonl"
-    )
+    controller = BridgeController(StubPlanner(), execute=False, trace_path=tmp_path / "trace.jsonl")
     server = BridgeServer(("127.0.0.1", 0), controller, "bridge-secret")
     thread = Thread(target=server.serve_forever, daemon=True)
     thread.start()
