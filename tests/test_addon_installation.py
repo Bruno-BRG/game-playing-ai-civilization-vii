@@ -16,6 +16,8 @@ def test_installer_writes_mod_and_shared_secret(tmp_path: Path) -> None:
         encoding="utf-8"
     )
     assert "http://127.0.0.1:43210/v1/observations" in installed_script
+    assert 'observationStorageKey: "civ7-ai-bridge:observation"' in installed_script
+    assert 'decisionStorageKey: "civ7-ai-bridge:decision"' in installed_script
     assert "pollIntervalMs: 1000" in installed_script
     assert installation.token in installed_script
     assert installed_script.index("globalThis.Civ7AiBridgeConfig") < installed_script.index(
@@ -42,16 +44,18 @@ def test_installer_uses_epic_user_data_root_when_game_created_it(tmp_path: Path)
     assert installation.mod_root == epic_root / "Mods" / "civ7-ai-bridge"
 
 
-def test_addon_uses_civ_runtime_xml_http_request() -> None:
+def test_addon_uses_civ_local_storage_transport() -> None:
     addon_script = (
         Path(__file__).parents[1] / "src" / "civ7_ai" / "addon" / "ui" / "civ7-ai-bridge.js"
     ).read_text(encoding="utf-8")
 
     # ROOT CAUSE:
     #
-    # Civilization VII's Cohtml runtime exposes XMLHttpRequest but not the browser Fetch API.
-    # Calling fetch made every poll fail before an observation reached the companion.
-    assert "new XMLHttpRequest()" in addon_script
+    # Civilization VII's Cohtml runtime refuses HTTP URLs, including loopback URLs. Its UI
+    # LocalStorage database is the supported local exchange that survives that sandbox.
+    assert "localStorage.setItem(observationStorageKey" in addon_script
+    assert "localStorage.getItem(decisionStorageKey" in addon_script
+    assert "new XMLHttpRequest()" not in addon_script
     assert "fetch(config.endpoint" not in addon_script
 
 

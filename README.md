@@ -6,7 +6,7 @@
 
 This project combines a structured Civilization VII add-on, constrained NVIDIA Build planning,
 and a YOLO26 visual fallback. The add-on is the primary control path: it publishes only visible
-single-player state and a list of game-validated actions to an authenticated local companion.
+single-player state and a list of game-validated actions to a local companion.
 
 > [!IMPORTANT]
 > The project is for owned copies of the game and local single-player research. It does not read
@@ -27,7 +27,7 @@ single-player state and a list of game-validated actions to an authenticated loc
 - [x] Screenshot and JSONL trace artifacts
 - [x] Conservative next-turn baseline planner
 - [x] Installable Civilization VII structured-state add-on
-- [x] Authenticated loopback companion with dry-run default
+- [x] Civ VII LocalStorage companion transport with dry-run default
 - [x] NVIDIA Build OpenAI-compatible tool-calling planner
 - [x] Research selection and native next-action execution
 - [ ] Civilization VII dataset and trained weights
@@ -93,10 +93,12 @@ uv run civ7-ai bridge `
   --runs-root bridge-runs
 ```
 
-The companion binds only to `127.0.0.1`, authenticates the add-on with a generated local token,
-and writes every observation and decision to `bridge-runs/<UTC timestamp>/trace.jsonl`. Dry-run
-returns the model's choice but does not authorize the add-on to execute it. After reviewing the
-trace, explicitly enable execution:
+Civilization VII's embedded UI blocks loopback HTTP, so the add-on exchanges its observation and
+the companion's correlated decision through the game's own local `LocalStorage.sqlite` database.
+The companion also keeps a loopback health endpoint for diagnostics. It writes every observation
+and decision to `bridge-runs/<UTC timestamp>/trace.jsonl`. Dry-run returns the model's choice but
+does not authorize the add-on to execute it. After reviewing the trace, explicitly enable
+execution:
 
 ```powershell
 uv run civ7-ai bridge `

@@ -21,8 +21,8 @@ class AddonInstallation:
     token: str
 
 
-def _discover_user_data_root(local_app_data: Path) -> Path:
-    """Prefer an active Epic data root and otherwise use the standard PC directory."""
+def discover_user_data_root(local_app_data: Path) -> Path:
+    """Return the game-owned user-data root for the installed PC platform."""
 
     firaxis_root = local_app_data / "Firaxis Games"
     candidates = (
@@ -54,7 +54,7 @@ def install_addon(
             raise FileNotFoundError("LOCALAPPDATA is not available")
         local_app_data = Path(local_app_data_value)
 
-    user_data_root = _discover_user_data_root(local_app_data)
+    user_data_root = discover_user_data_root(local_app_data)
     mod_root = user_data_root / "Mods" / "civ7-ai-bridge"
     token_path = local_app_data / "Civilization VII AI" / "bridge-token.txt"
     token_path.parent.mkdir(parents=True, exist_ok=True)
@@ -77,6 +77,8 @@ def install_addon(
         "globalThis.Civ7AiBridgeConfig = Object.freeze({\n"
         f"  endpoint: {json.dumps(f'http://127.0.0.1:{port}/v1/observations')},\n"
         f"  token: {json.dumps(token)},\n"
+        '  observationStorageKey: "civ7-ai-bridge:observation",\n'
+        '  decisionStorageKey: "civ7-ai-bridge:decision",\n'
         "  pollIntervalMs: 1000,\n"
         "});\n"
     )

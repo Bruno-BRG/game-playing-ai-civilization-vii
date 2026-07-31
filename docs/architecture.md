@@ -5,7 +5,7 @@ runner remains a useful fallback and independent post-action observer.
 
 ```text
 Civilization VII add-on (visible single-player state + legal action IDs)
-  -> authenticated HTTP on 127.0.0.1
+  -> Civ VII UI LocalStorage.sqlite
     -> companion validation + state deduplication
       -> NVIDIA Build fast or strategic Nemotron profile
         -> forced choose_action tool call
@@ -15,8 +15,9 @@ Civilization VII add-on (visible single-player state + legal action IDs)
 ```
 
 The NVIDIA API key exists only in the local companion's `NVIDIA_API_KEY` environment variable.
-The add-on holds a separate generated loopback token, never the provider credential. The companion
-is dry-run unless `--execute` is present.
+Civilization VII's embedded Cohtml runtime blocks loopback HTTP requests, so the UI script and
+companion exchange only a correlated observation and decision through the game's LocalStorage
+database. The companion is dry-run unless `--execute` is present.
 
 Routine actions use Nemotron 3 Nano Omni 30B-A3B with thinking disabled and a named tool choice.
 This keeps the hosted request near one second while preserving constrained tool selection. The

@@ -8,7 +8,7 @@ import os
 from collections.abc import Sequence
 from pathlib import Path
 
-from .addon_installation import install_addon, read_bridge_token
+from .addon_installation import discover_user_data_root, install_addon, read_bridge_token
 from .bridge import BridgeController, BridgeServer
 from .capture import CaptureSource, DxcamCapture, ImageCapture, WindowTarget, find_window
 from .execution import DryRunExecutor, Executor, WindowsInputExecutor
@@ -19,6 +19,7 @@ from .installation import (
     discover_saves_root,
     launch_game,
 )
+from .local_storage import LocalStorageBridge
 from .nvidia import NvidiaConfig, NvidiaPlanner
 from .perception import NullDetector, YoloDetector
 from .planning import NextActionKeyboardPlanner, NextTurnBaselinePlanner, ObservePlanner, Planner
@@ -293,15 +294,23 @@ def main(argv: Sequence[str] | None = None) -> int:
             execute=arguments.execute,
             trace_path=run_directory / "trace.jsonl",
         )
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if not local_app_data:
+            raise FileNotFoundError("LOCALAPPDATA is not available")
+        storage_path = discover_user_data_root(Path(local_app_data)) / "LocalStorage.sqlite"
+        storage_bridge = LocalStorageBridge(controller, storage_path=storage_path)
         server = BridgeServer(("127.0.0.1", arguments.port), controller, read_bridge_token())
         mode = "EXECUTE" if arguments.execute else "DRY-RUN"
-        print(f"Civ VII AI bridge listening on http://127.0.0.1:{arguments.port} ({mode}).")
+        print(f"Civ VII AI bridge health endpoint: http://127.0.0.1:{arguments.port} ({mode}).")
+        print(f"Civ VII LocalStorage transport: {storage_path}")
         print(f"NVIDIA model: {nvidia_config.model}. Trace: {run_directory / 'trace.jsonl'}")
+        storage_bridge.start()
         try:
             server.serve_forever()
         except KeyboardInterrupt:
             print("Bridge stopped.")
         finally:
+            storage_bridge.stop()
             server.server_close()
         return 0
     if arguments.command == "train":

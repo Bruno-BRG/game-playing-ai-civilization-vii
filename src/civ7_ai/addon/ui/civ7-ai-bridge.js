@@ -8,15 +8,17 @@
   "use strict";
 
   const config = globalThis.Civ7AiBridgeConfig;
-  if (!config?.endpoint || !config?.token) {
+  if (!config) {
     console.error("[Civ VII AI] Missing bridge configuration; reinstall the add-on.");
     return;
   }
 
-  let requestInFlight = false;
   let observationSequence = 0;
   let currentObservationId = null;
   let currentActions = new Map();
+  let pendingObservationId = null;
+  const observationStorageKey = config.observationStorageKey ?? "civ7-ai-bridge:observation";
+  const decisionStorageKey = config.decisionStorageKey ?? "civ7-ai-bridge:decision";
 
   function isSinglePlayerGame() {
     const gameConfiguration = Configuration.getGame();
@@ -246,33 +248,22 @@
     }
   }
 
-  function postObservation(observation) {
-    return new Promise((resolve, reject) => {
-      const request = new XMLHttpRequest();
-      request.open("POST", config.endpoint);
-      request.timeout = 30_000;
-      request.setRequestHeader("Content-Type", "application/json");
-      request.setRequestHeader("X-Civ7-AI-Bridge-Token", config.token);
-      request.onload = () => {
-        if (request.status < 200 || request.status >= 300) {
-          reject(new Error(`Companion returned HTTP ${request.status}`));
-          return;
-        }
-        try {
-          resolve(JSON.parse(request.responseText));
-        } catch {
-          reject(new Error("Companion returned invalid JSON"));
-        }
-      };
-      request.onerror = () => reject(new Error("Companion request failed"));
-      request.onabort = () => reject(new Error("Companion request was aborted"));
-      request.ontimeout = () => reject(new Error("Companion request timed out"));
-      request.send(JSON.stringify(observation));
-    });
-  }
-
-  async function poll() {
-    if (requestInFlight) return;
+  function poll() {
+    if (pendingObservationId) {
+      try {
+        const storedDecision = localStorage.getItem(decisionStorageKey);
+        if (!storedDecision) return;
+        const decision = JSON.parse(storedDecision);
+        if (decision?.observation_id !== pendingObservationId) return;
+        localStorage.removeItem(decisionStorageKey);
+        pendingObservationId = null;
+        console.info(`[Civ VII AI] ${decision.action_id}: ${decision.reason}`);
+        executeDecision(decision);
+      } catch (error) {
+        console.warn("[Civ VII AI] Could not read companion decision", error);
+      }
+      return;
+    }
     let observation;
     try {
       observation = buildObservation();
@@ -282,15 +273,11 @@
     }
     if (!observation) return;
 
-    requestInFlight = true;
     try {
-      const decision = await postObservation(observation);
-      console.info(`[Civ VII AI] ${decision.action_id}: ${decision.reason}`);
-      executeDecision(decision);
+      localStorage.setItem(observationStorageKey, JSON.stringify(observation));
+      pendingObservationId = observation.observation_id;
     } catch (error) {
-      console.warn("[Civ VII AI] Companion is unavailable", error);
-    } finally {
-      requestInFlight = false;
+      console.warn("[Civ VII AI] Could not publish observation", error);
     }
   }
 
