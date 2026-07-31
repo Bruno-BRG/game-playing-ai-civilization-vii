@@ -66,13 +66,12 @@ def install_addon(
     addon_assets = files("civ7_ai").joinpath("addon")
     mod_root.mkdir(parents=True, exist_ok=True)
     (mod_root / "ui").mkdir(parents=True, exist_ok=True)
-    for relative_path in ("civ7-ai-bridge.modinfo", "ui/civ7-ai-bridge.js"):
-        source = addon_assets.joinpath(*relative_path.split("/"))
-        with (
-            source.open("rb") as source_file,
-            (mod_root / Path(relative_path)).open("wb") as target_file,
-        ):
-            shutil.copyfileobj(source_file, target_file)
+    manifest_source = addon_assets.joinpath("civ7-ai-bridge.modinfo")
+    with (
+        manifest_source.open("rb") as source_file,
+        (mod_root / "civ7-ai-bridge.modinfo").open("wb") as target_file,
+    ):
+        shutil.copyfileobj(source_file, target_file)
 
     config = (
         "globalThis.Civ7AiBridgeConfig = Object.freeze({\n"
@@ -81,7 +80,16 @@ def install_addon(
         "  pollIntervalMs: 1000,\n"
         "});\n"
     )
-    (mod_root / "ui" / "civ7-ai-bridge-config.js").write_text(config, encoding="utf-8")
+    addon_script = addon_assets.joinpath("ui", "civ7-ai-bridge.js").read_text(encoding="utf-8")
+    (mod_root / "ui" / "civ7-ai-bridge.js").write_text(
+        config + "\n" + addon_script,
+        encoding="utf-8",
+    )
+    separate_config_path = mod_root / "ui" / "civ7-ai-bridge-config.js"
+    if separate_config_path.exists():
+        # Each Civ VII UIScript receives an isolated global context. The generated config must
+        # live in the same script as its consumer, so remove the obsolete split installation.
+        separate_config_path.unlink()
     return AddonInstallation(mod_root=mod_root, token_path=token_path, token=token)
 
 

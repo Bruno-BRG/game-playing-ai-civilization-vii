@@ -20,7 +20,6 @@
         <ActionGroup id="civ7-ai-bridge-game" scope="game" criteria="always">
             <Actions>
                 <UIScripts>
-                    <Item>ui/civ7-ai-bridge-config.js</Item>
                     <Item>ui/civ7-ai-bridge.js</Item>
                 </UIScripts>
             </Actions>

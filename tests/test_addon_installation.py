@@ -12,10 +12,16 @@ def test_installer_writes_mod_and_shared_secret(tmp_path: Path) -> None:
     assert (installation.mod_root / "civ7-ai-bridge.modinfo").is_file()
     assert (installation.mod_root / "ui" / "civ7-ai-bridge.js").is_file()
     assert installation.token_path == tmp_path / "Civilization VII AI" / "bridge-token.txt"
-    config = (installation.mod_root / "ui" / "civ7-ai-bridge-config.js").read_text(encoding="utf-8")
-    assert "http://127.0.0.1:43210/v1/observations" in config
-    assert "pollIntervalMs: 1000" in config
-    assert installation.token in config
+    installed_script = (installation.mod_root / "ui" / "civ7-ai-bridge.js").read_text(
+        encoding="utf-8"
+    )
+    assert "http://127.0.0.1:43210/v1/observations" in installed_script
+    assert "pollIntervalMs: 1000" in installed_script
+    assert installation.token in installed_script
+    assert installed_script.index("globalThis.Civ7AiBridgeConfig") < installed_script.index(
+        "(() => {"
+    )
+    assert not (installation.mod_root / "ui" / "civ7-ai-bridge-config.js").exists()
     assert read_bridge_token(local_app_data=tmp_path) == installation.token
 
 
@@ -47,3 +53,16 @@ def test_addon_uses_civ_runtime_xml_http_request() -> None:
     # Calling fetch made every poll fail before an observation reached the companion.
     assert "new XMLHttpRequest()" in addon_script
     assert "fetch(config.endpoint" not in addon_script
+
+
+def test_manifest_loads_the_combined_bridge_script_once() -> None:
+    manifest = (
+        Path(__file__).parents[1] / "src" / "civ7_ai" / "addon" / "civ7-ai-bridge.modinfo"
+    ).read_text(encoding="utf-8")
+
+    # ROOT CAUSE:
+    #
+    # Civilization VII isolates globals between separate UIScript items. Loading configuration
+    # and bridge code as different items made the bridge see an empty configuration.
+    assert manifest.count("<Item>ui/civ7-ai-bridge.js</Item>") == 1
+    assert "civ7-ai-bridge-config.js" not in manifest
