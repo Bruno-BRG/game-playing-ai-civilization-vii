@@ -18,9 +18,10 @@ The NVIDIA API key exists only in the local companion's `NVIDIA_API_KEY` environ
 The add-on holds a separate generated loopback token, never the provider credential. The companion
 is dry-run unless `--execute` is present.
 
-Routine actions use Nemotron 3 Nano 30B-A3B with thinking disabled and a named tool choice. This
-keeps the hosted request near one second while preserving constrained tool selection. Nemotron 3
-Ultra is an explicit strategic profile for future long-horizon decisions, not the per-action loop.
+Routine actions use Nemotron 3 Nano Omni 30B-A3B with thinking disabled and a named tool choice.
+This keeps the hosted request near one second while preserving constrained tool selection. The
+same model's full reasoning mode is an explicit strategic profile for future long-horizon
+decisions, not the per-action loop.
 
 ## Structured bridge boundaries
 

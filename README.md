@@ -101,17 +101,18 @@ uv run civ7-ai bridge `
   --runs-root bridge-runs
 ```
 
-The default `fast` profile uses `nvidia/nemotron-3-nano-30b-a3b` with thinking disabled,
-temperature `0.6`, top-p `0.95`, and at most 512 output tokens. In a live endpoint benchmark it
-averaged about one second across three constrained Civilization VII decisions. For occasional
-long-horizon planning, select the slower reasoning profile explicitly:
+The default `fast` profile uses `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` with thinking
+disabled, temperature `0.2`, top-p `0.95`, and at most 1,024 output tokens. In a live endpoint
+benchmark it averaged 1.092 seconds and correctly handled all three constrained Civilization VII
+decisions. For occasional long-horizon planning, select the slower reasoning profile explicitly:
 
 ```powershell
 uv run civ7-ai nvidia-test --profile strategic
 ```
 
-The `strategic` profile uses `nvidia/nemotron-3-ultra-550b-a55b` with thinking and a 16,384-token
-reasoning budget. The NVIDIA endpoint defaults to `https://integrate.api.nvidia.com/v1`;
+The `strategic` profile uses the same Omni model with thinking, a 65,536-token output ceiling, and a
+16,384-token reasoning budget. It averaged 5.592 seconds in the same live benchmark, so it is not
+the per-action default. The NVIDIA endpoint defaults to `https://integrate.api.nvidia.com/v1`;
 `NVIDIA_MODEL` and
 `NVIDIA_BASE_URL` may be used instead of repeating command options. The API key remains solely in
 the companion process. The model is forced to call `choose_action` with one exact ID from the
@@ -123,9 +124,9 @@ production, diplomacy, and settlement decisions remain on the roadmap, so this i
 slice rather than an autonomous full campaign player yet.
 
 The add-on refuses multiplayer/hotseat and exports map telemetry only for currently visible tiles.
-See NVIDIA's [LLM API reference](https://docs.api.nvidia.com/nim/reference/llm-apis),
-[Nemotron 3 Ultra model page](https://build.nvidia.com/nvidia/nemotron-3-ultra-550b-a55b/build),
-[function-calling guide](https://docs.nvidia.com/nim/large-language-models/latest/function-calling.html),
+See NVIDIA's [Nemotron 3 Nano Omni model card](https://build.nvidia.com/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning/modelcard),
+[model API reference](https://docs.api.nvidia.com/nim/reference/nvidia-nemotron-3-nano-omni-30b-a3b-reasoning-infer),
+[function-calling guide](https://docs.nvidia.com/nim/vision-language-models/1.7.0/examples/nemotron-3-nano-omni-30b-a3b-reasoning/api.html),
 and 2K's [Civilization VII third-party mods FAQ](https://support.civilization.com/hc/en-us/articles/44037954953235-Civilization-VII-Third-Party-Party-Mods-FAQ).
 
 ## Screen-based fallback

@@ -23,12 +23,12 @@ class NvidiaConfig:
     """Connection and reasoning settings for the NVIDIA Build Nemotron model."""
 
     api_key: str
-    model: str = "nvidia/nemotron-3-nano-30b-a3b"
+    model: str = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
     base_url: str = "https://integrate.api.nvidia.com/v1"
     timeout_seconds: float = 30
-    temperature: float = 0.6
+    temperature: float = 0.2
     top_p: float = 0.95
-    max_tokens: int = 512
+    max_tokens: int = 1024
     enable_thinking: bool = False
     reasoning_budget: int = 0
 
@@ -121,8 +121,8 @@ class NvidiaPlanner:
             "enable_thinking": self._config.enable_thinking,
         }
         if self._config.enable_thinking:
-            # Nemotron 3 Ultra requires non-empty content so its reasoning parser can preserve
-            # the final tool call after the thinking trace.
+            # Reasoning-enabled Nemotron models need a final content segment so the hosted
+            # parser preserves a tool call emitted after the thinking trace.
             chat_template_kwargs["force_nonempty_content"] = True
 
         request_body: JsonObject = {

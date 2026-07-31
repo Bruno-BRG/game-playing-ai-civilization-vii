@@ -31,7 +31,7 @@ def _add_nvidia_arguments(parser: argparse.ArgumentParser) -> None:
         "--profile",
         choices=["fast", "strategic"],
         default="fast",
-        help="fast uses Nemotron Nano; strategic uses thinking-enabled Nemotron Ultra",
+        help="fast disables Omni thinking; strategic enables its full reasoning budget",
     )
     parser.add_argument(
         "--model",
@@ -57,19 +57,19 @@ def _add_nvidia_arguments(parser: argparse.ArgumentParser) -> None:
 
 def _nvidia_config_from(arguments: argparse.Namespace, api_key: str) -> NvidiaConfig:
     if arguments.profile == "strategic":
-        default_model = "nvidia/nemotron-3-ultra-550b-a55b"
-        default_timeout = 120.0
-        default_temperature = 1.0
+        default_model = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+        default_timeout = 180.0
+        default_temperature = 0.6
         default_top_p = 0.95
-        default_max_tokens = 16_384
+        default_max_tokens = 65_536
         default_thinking = True
         default_reasoning_budget = 16_384
     else:
-        default_model = "nvidia/nemotron-3-nano-30b-a3b"
-        default_timeout = 30.0
-        default_temperature = 0.6
+        default_model = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+        default_timeout = 60.0
+        default_temperature = 0.2
         default_top_p = 0.95
-        default_max_tokens = 512
+        default_max_tokens = 1024
         default_thinking = False
         default_reasoning_budget = 0
     enable_thinking = arguments.thinking if arguments.thinking is not None else default_thinking

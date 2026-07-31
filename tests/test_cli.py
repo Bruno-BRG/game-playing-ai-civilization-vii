@@ -40,7 +40,7 @@ def test_nvidia_test_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
         main(["nvidia-test"])
 
 
-def test_strategic_profile_selects_thinking_enabled_ultra(
+def test_strategic_profile_selects_thinking_enabled_omni(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     received_configs: list[NvidiaConfig] = []
@@ -57,6 +57,7 @@ def test_strategic_profile_selects_thinking_enabled_ultra(
 
     assert main(["nvidia-test", "--profile", "strategic"]) == 0
     assert len(received_configs) == 1
-    assert received_configs[0].model == "nvidia/nemotron-3-ultra-550b-a55b"
+    assert received_configs[0].model == "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+    assert received_configs[0].max_tokens == 65_536
     assert received_configs[0].enable_thinking is True
     assert received_configs[0].reasoning_budget == 16_384

@@ -56,10 +56,10 @@ def test_planner_forces_a_schema_constrained_tool_call() -> None:
 
     assert decision.action_id == "next_action"
     assert decision.reason == "Turn is ready."
-    assert captured_body["model"] == "nvidia/nemotron-3-nano-30b-a3b"
-    assert captured_body["temperature"] == 0.6
+    assert captured_body["model"] == "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+    assert captured_body["temperature"] == 0.2
     assert captured_body["top_p"] == 0.95
-    assert captured_body["max_tokens"] == 512
+    assert captured_body["max_tokens"] == 1024
     assert "reasoning_budget" not in captured_body
     assert captured_body["tool_choice"] == {
         "type": "function",
@@ -128,7 +128,7 @@ def test_reasoning_budget_requires_thinking() -> None:
         NvidiaConfig(api_key="secret", reasoning_budget=100)
 
 
-def test_strategic_config_enables_ultra_reasoning_fields() -> None:
+def test_strategic_config_enables_omni_reasoning_fields() -> None:
     captured_body: dict[str, JsonValue] = {}
 
     def transport(
@@ -158,8 +158,8 @@ def test_strategic_config_enables_ultra_reasoning_fields() -> None:
     planner = NvidiaPlanner(
         NvidiaConfig(
             api_key="secret",
-            model="nvidia/nemotron-3-ultra-550b-a55b",
-            max_tokens=16_384,
+            model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+            max_tokens=65_536,
             enable_thinking=True,
             reasoning_budget=16_384,
         ),
